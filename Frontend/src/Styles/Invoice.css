@@ -1,0 +1,26 @@
+.invoice-container {
+    margin: 20px auto;
+    text-align: center;
+}
+ 
+.invoice-search {
+    display: flex;
+    justify-content: end;
+    margin-bottom: 15px;
+    padding: 10px;
+}
+
+.invoice-search-box {
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 50px;
+    font-size: 14px;
+    transition: width 0.3s ease-in-out;
+    width: 200px;
+}
+ 
+.invoice-search-box:focus {
+    width: 230px;
+    outline: none;
+    border-color: #3a3a5f;
+}
