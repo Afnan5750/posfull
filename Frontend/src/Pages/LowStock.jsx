@@ -2,65 +2,66 @@ import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
 import { FaEdit } from "react-icons/fa";
 import axios from "axios";
-import "../Styles/ExpiredPro.css";
+import "../Styles/LowStock.css";
 
-const ExpiredPro = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+const LowStock = () => {
   const [searchText, setSearchText] = useState("");
-  const [updatedExpiryDate, setUpdatedExpiryDate] = useState("");
+  const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [updatedQuantity, setUpdatedQuantity] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
-    const fetchExpiredProducts = async () => {
+    const fetchLowStockProducts = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/product/expired-products"
+          "http://localhost:5000/api/product/lowstock"
         );
-        setData(response.data.expiredProducts);
+        setLowStockProducts(response.data.lowStockProducts || []);
       } catch (error) {
-        console.error("Error fetching expired products:", error);
-      } finally {
-        setLoading(false);
+        console.error("Error fetching low stock products:", error);
       }
     };
-
-    fetchExpiredProducts();
+    fetchLowStockProducts();
   }, []);
 
-  const handleEditClick = (product) => {
+  // Search filter
+  const filteredProducts = lowStockProducts.filter(
+    (item) =>
+      item.ProductName.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.Category.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.Probarcode.toString().includes(searchText)
+  );
+
+  const openEditModal = (product) => {
     setSelectedProduct(product);
-    setUpdatedExpiryDate(
-      product.ExpiryDate ? product.ExpiryDate.split("T")[0] : ""
-    ); // Pre-fill date
+    setUpdatedQuantity(product.Quantity || "");
     setEditModalOpen(true);
   };
 
   const closeModal = () => {
     setEditModalOpen(false);
-    setSelectedProduct(null);
+    setUpdatedQuantity("");
   };
 
-  const handleUpdateExpiryDate = async (e) => {
+  const handleUpdateQuantity = async (e) => {
     e.preventDefault();
     if (!selectedProduct) return;
 
     try {
       await axios.put(
-        `http://localhost:5000/api/product/update-expiredproduct/${selectedProduct._id}`,
-        { ExpiryDate: updatedExpiryDate }
+        `http://localhost:5000/api/product/update-lowstock/${selectedProduct._id}`,
+        { Quantity: updatedQuantity }
       );
 
-      // Re-fetch expired products from backend
       const response = await axios.get(
-        "http://localhost:5000/api/product/expired-products"
+        "http://localhost:5000/api/product/lowstock"
       );
-      setData(response.data.expiredProducts); // Update state with fresh data
+      setLowStockProducts(response.data.lowStockProducts || []);
 
       closeModal();
     } catch (error) {
-      console.error("Error updating expiry date:", error);
+      console.error("Error updating quantity:", error);
     }
   };
 
@@ -130,35 +131,28 @@ const ExpiredPro = () => {
       ignoreRowClick: true,
       sortable: false,
     },
-    {
-      name: "Expiry Date",
-      selector: (row) =>
-        row.ExpiryDate
-          ? new Date(row.ExpiryDate).toLocaleDateString("en-GB", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            })
-          : "N/A",
-      sortable: true,
-    },
+    // {
+    //   name: "Expiry Date",
+    //   selector: (row) =>
+    //     row.ExpiryDate
+    //       ? new Date(row.ExpiryDate).toLocaleDateString("en-GB", {
+    //           day: "2-digit",
+    //           month: "2-digit",
+    //           year: "numeric",
+    //         })
+    //       : "N/A",
+    //   sortable: true,
+    // },
     {
       name: "Actions",
       cell: (row) => (
-        <button className="edit-btn" onClick={() => handleEditClick(row)}>
+        <button className="edit-btn" onClick={() => openEditModal(row)}>
           <FaEdit />
         </button>
       ),
       ignoreRowClick: true,
     },
   ];
-
-  const filteredData = data.filter(
-    (item) =>
-      item.ProductName.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.Category.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.Probarcode.toString().includes(searchText)
-  );
 
   const highlightText = (text, search) => {
     if (!text) return ""; // Ensure text is not null/undefined
@@ -170,26 +164,26 @@ const ExpiredPro = () => {
   };
 
   return (
-    <div className="expired-product-table-container full-width">
-      <h2 className="table-title">Expired Product Table</h2>
+    <div className="low-stock-table-container full-width">
+      <h2 className="table-title">Low Stock Products</h2>
+
       <div className="table-controls-right">
         <input
           type="text"
-          placeholder="Search expired product..."
+          placeholder="Search product..."
           className="search-box"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
         />
       </div>
+
       <DataTable
         columns={columns}
-        data={filteredData}
+        data={filteredProducts}
         pagination
         highlightOnHover
-        progressPending={loading}
       />
 
-      {/* Custom Modal */}
       {editModalOpen && (
         <div className="modal-overlay" onClick={closeModal}>
           <div
@@ -202,30 +196,28 @@ const ExpiredPro = () => {
             >
               &times;
             </span>
-            <h3 className="modal-title">Update Expiry Date</h3>
-
-            <form onSubmit={handleUpdateExpiryDate}>
+            <h3 className="modal-title">Update Quantity</h3>
+            <form onSubmit={handleUpdateQuantity}>
               <div
-                className={`input-group ${updatedExpiryDate ? "focused" : ""}`}
+                className={`input-group ${updatedQuantity ? "focused" : ""}`}
               >
                 <input
-                  type="date"
+                  type="number"
                   className="modal-input"
                   required
-                  value={updatedExpiryDate}
-                  onChange={(e) => setUpdatedExpiryDate(e.target.value)}
+                  min="1"
+                  value={updatedQuantity}
+                  onChange={(e) => setUpdatedQuantity(e.target.value)}
                   onFocus={(e) => e.target.parentNode.classList.add("focused")}
                   onBlur={(e) => {
-                    if (!e.target.value) {
+                    if (!e.target.value)
                       e.target.parentNode.classList.remove("focused");
-                    }
                   }}
                 />
-                <label className="floating-label">Expiry Date</label>
+                <label className="floating-label">New Quantity</label>
               </div>
-
               <button type="submit" className="modal-submit-btn">
-                Update Expiry Date
+                Update Quantity
               </button>
             </form>
           </div>
@@ -235,4 +227,4 @@ const ExpiredPro = () => {
   );
 };
 
-export default ExpiredPro;
+export default LowStock;

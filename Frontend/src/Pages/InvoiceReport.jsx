@@ -1,27 +1,44 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
-import "../Styles/Invoice.css";
-import { FaEye, FaEdit, FaTrash, FaPrint } from "react-icons/fa";
+import "../Styles/InvoiceReport.css";
+import { FaEye, FaPrint, FaDownload } from "react-icons/fa";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-const Invoice = () => {
+const getFirstDayOfMonth = () => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString(
+    "en-CA"
+  );
+};
+
+const getTodayDate = () => {
+  return new Date().toLocaleDateString("en-CA");
+};
+
+const InvoiceReport = () => {
   const [searchText, setSearchText] = useState("");
+  const [startDate, setStartDate] = useState(getFirstDayOfMonth());
+  const [endDate, setEndDate] = useState(getTodayDate());
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchInvoices = async () => {
+    const fetchInvoicesByDateRange = async () => {
+      if (!startDate || !endDate) return; // Prevent request if no dates selected
+
       try {
         const response = await fetch(
-          "http://localhost:5000/api/invoice/getinvoices"
+          `http://localhost:5000/api/invoice/getInvoicesByDateRange?startDate=${startDate}&endDate=${endDate}`
         );
+
         if (!response.ok) {
           throw new Error("Failed to fetch invoices");
         }
+
         const result = await response.json();
         setData(result);
       } catch (err) {
@@ -31,47 +48,26 @@ const Invoice = () => {
       }
     };
 
-    fetchInvoices();
-  }, []);
+    fetchInvoicesByDateRange();
+  }, [startDate, endDate]); // Trigger request when dates change
 
-  const handleEditClick = (invoiceId) => {
-    navigate(`/sales/newsale/${invoiceId}`);
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this invoice?")) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/invoice/deleteinvoice/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete invoice");
-      }
-
-      setData((prevData) => prevData.filter((invoice) => invoice._id !== id));
-    } catch (err) {
-      alert(`Error: ${err.message}`);
-    }
-  };
-
-  // Function to highlight search text in matching words
   const highlightText = (text, searchText) => {
-    if (!searchText || !text) return text; // If no search or text is undefined, return normal text
-
-    const regex = new RegExp(`(${searchText})`, "gi"); // Case-insensitive search
+    if (!searchText || !text) return text;
+    const regex = new RegExp(`(${searchText})`, "gi");
     return String(text).replace(regex, `<span class="highlight">$1</span>`);
   };
+
+  const filteredData = data.filter((item) => {
+    const invoiceDate = new Date(item.createdAt).toISOString().split("T")[0]; // Convert to YYYY-MM-DD format
+    const matchesSearch =
+      item.customerName.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.invoiceNo.toString().includes(searchText);
+    const withinDateRange =
+      (!startDate || invoiceDate >= startDate) &&
+      (!endDate || invoiceDate <= endDate);
+
+    return matchesSearch && withinDateRange;
+  });
 
   const columns = [
     {
@@ -105,13 +101,13 @@ const Invoice = () => {
       sortable: true,
     },
     {
-      name: "Customer Contact No",
-      selector: (row) => row.customerContactNo,
+      name: "Total Amount",
+      selector: (row) => `Rs. ${row.totalAmount}`,
       sortable: true,
     },
     {
-      name: "Total Amount",
-      selector: (row) => `Rs. ${row.totalAmount}`,
+      name: "Profit",
+      selector: (row) => `Rs. ${row.totalProfit}`,
       sortable: true,
     },
     {
@@ -127,15 +123,8 @@ const Invoice = () => {
           >
             <FaEye />
           </button>
-
-          <button className="edit-btn" onClick={() => handleEditClick(row._id)}>
-            <FaEdit />
-          </button>
           <button className="print-btn">
             <FaPrint />
-          </button>
-          <button className="delete-btn" onClick={() => handleDelete(row._id)}>
-            <FaTrash />
           </button>
         </div>
       ),
@@ -143,18 +132,108 @@ const Invoice = () => {
     },
   ];
 
+  const handleDownload = () => {
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Invoice Report", 14, 10);
+
+    // Define table headers
+    const headers = [
+      ["#", "Invoice No", "Customer Name", "Date", "Profit", "Total Amount"],
+    ];
+
+    // Define table data
+    const data = filteredData.map((invoice, index) => [
+      index + 1,
+      invoice.invoiceNo,
+      invoice.customerName,
+      new Date(invoice.createdAt).toLocaleDateString(),
+      `Rs. ${invoice.totalProfit?.toFixed(2) || "0.00"}`,
+      `Rs. ${invoice.totalAmount?.toFixed(2) || "0.00"}`,
+    ]);
+
+    // Calculate Grand Total Amount & Total Profit
+    const grandTotalAmount = filteredData.reduce(
+      (sum, invoice) => sum + (invoice.totalAmount || 0),
+      0
+    );
+    const totalProfit = filteredData.reduce(
+      (sum, invoice) => sum + (invoice.totalProfit || 0),
+      0
+    );
+
+    // Generate table
+    autoTable(doc, {
+      startY: 20,
+      head: headers,
+      body: data,
+      styles: { fontSize: 10, cellPadding: 4 },
+      headStyles: {
+        fillColor: "#1e1e2f",
+        textColor: "#ffffff",
+        fontStyle: "bold",
+      },
+      columnStyles: {
+        4: { halign: "right" },
+        5: { halign: "right", fontStyle: "bold" }, // Align Total Amount column
+      },
+      margin: { top: 20 },
+    });
+
+    // Position for Total Profit and Grand Total Amount outside the table
+    const finalY = doc.lastAutoTable.finalY + 10; // Get last position of table
+
+    // Style and Add Total Profit
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(`Total Profit: Rs. ${totalProfit.toFixed(2)}`, 14, finalY);
+
+    // Style and Add Grand Total Amount
+    doc.setFontSize(12);
+    doc.setTextColor(255, 0, 0); // Red color for emphasis
+    doc.text(
+      `Grand Total Amount: Rs. ${grandTotalAmount.toFixed(2)}`,
+      14,
+      finalY + 8
+    );
+
+    // Save the PDF
+    doc.save("Invoice_Report.pdf");
+  };
+
   return (
     <div className="invoice-container full-width">
-      <h2 className="table-title">Invoice Table</h2>
-
-      <div className="invoice-search">
-        <input
-          type="text"
-          placeholder="Search invoice..."
-          className="invoice-search-box"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
+      <h2 className="table-title">Invoice Report</h2>
+      <div className="invoice-filters">
+        <div className="date-filters">
+          <input
+            type="date"
+            className="date-picker"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <input
+            type="date"
+            className="date-picker"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </div>
+        <div className="search-download-container">
+          <input
+            type="text"
+            placeholder="Search invoice..."
+            className="invoice-search-box"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+          <button className="download-btn" onClick={handleDownload}>
+            <FaDownload size={20} />
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -164,19 +243,11 @@ const Invoice = () => {
       ) : (
         <DataTable
           columns={columns}
-          data={data.filter(
-            (item) =>
-              item.customerName
-                .toLowerCase()
-                .includes(searchText.toLowerCase()) ||
-              item.invoiceNo.toString().includes(searchText) ||
-              item.customerContactNo.toString().includes(searchText)
-          )}
+          data={filteredData}
           pagination
           highlightOnHover
         />
       )}
-
       {isModalOpen && selectedInvoice && (
         <div className="modal-overlay custom-modal-overlay">
           <div className="modal-content custom-modal-content">
@@ -269,4 +340,4 @@ const Invoice = () => {
   );
 };
 
-export default Invoice;
+export default InvoiceReport;

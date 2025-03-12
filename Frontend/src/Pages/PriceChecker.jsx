@@ -1,93 +1,77 @@
 import React, { useState, useEffect, useRef } from "react";
 import "../Styles/PriceChecker.css";
-import posLogo from "../assets/images/apple.jpg";
 import placeholderImage from "../assets/images/product-placeholder.jpg";
 
 const PriceChecker = () => {
   const [barcode, setBarcode] = useState("");
-  const [productName, setProductName] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [search, setSearch] = useState("");
+  const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const barcodeInputRef = useRef(null);
 
-  const dummyProducts = [
-    { id: 1, name: "Apple", image: posLogo, price: 15, barcode: "40611513084" },
-    {
-      id: 2,
-      name: "Avocado",
-      image: posLogo,
-      price: 20,
-      barcode: "2345678901234",
-    },
-    {
-      id: 3,
-      name: "Banana",
-      image: posLogo,
-      price: 75,
-      barcode: "3456789012345",
-    },
-    {
-      id: 4,
-      name: "Blueberry",
-      image: posLogo,
-      price: 35,
-      barcode: "4567890123456",
-    },
-    {
-      id: 5,
-      name: "Cherry",
-      image: posLogo,
-      price: 40,
-      barcode: "5678901234567",
-    },
-    {
-      id: 6,
-      name: "Carrot",
-      image: posLogo,
-      price: 12,
-      barcode: "6789012345678",
-    },
-  ];
+  // Fetch products from the API
+  useEffect(() => {
+    fetch("http://localhost:5000/api/product/getproducts")
+      .then((response) => response.json())
+      .then((data) => {
+        const productsFromAPI = data.products.map((product) => ({
+          id: product._id,
+          name: product.ProductName,
+          image: product.ProImage
+            ? `http://localhost:5000/uploads/${product.ProImage}`
+            : placeholderImage,
+          price: product.RetailPrice,
+          category: product.Category,
+          company: product.Company,
+          unit: product.Unit,
+          expiryDate: product.ExpiryDate,
+          barcode: product.Probarcode.toString(),
+        }));
+        setProducts(productsFromAPI);
+      })
+      .catch((error) => console.error("Error fetching products:", error));
+  }, []);
 
+  // Focus barcode input on mount
   useEffect(() => {
     if (barcodeInputRef.current) {
       barcodeInputRef.current.focus();
     }
   }, []);
 
+  // Handle barcode search
   const handleBarcodeSearch = (e) => {
     const scannedBarcode = e.target.value;
     setBarcode(scannedBarcode);
-    setProductName("");
-    setFilteredProducts([]);
+    setSearch("");
 
-    const foundProduct = dummyProducts.find(
-      (p) => p.barcode === scannedBarcode
-    );
+    const foundProduct = products.find((p) => p.barcode === scannedBarcode);
     setSelectedProduct(foundProduct || null);
   };
 
-  const handleProductSearch = (e) => {
-    const searchQuery = e.target.value;
-    setProductName(searchQuery);
+  // Handle product search
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearch(query);
     setBarcode("");
 
-    if (searchQuery.length > 0) {
-      // Filter products based on search input
-      const matches = dummyProducts.filter((p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    if (query.length > 0) {
+      const filtered = products.filter((p) =>
+        p.name.toLowerCase().startsWith(query)
       );
-      setFilteredProducts(matches);
+      setFilteredProducts(filtered);
     } else {
       setFilteredProducts([]);
-      setSelectedProduct(null); // Clear selected product when input is empty
+      setSelectedProduct(null);
     }
   };
 
-  const handleProductSelect = (product) => {
+  // Handle product selection from dropdown
+  const handleSelectProduct = (product) => {
     setSelectedProduct(product);
-    setProductName(product.name);
-    setFilteredProducts([]); // Hide dropdown after selection
+    setSearch(product.name);
+    setFilteredProducts([]);
   };
 
   return (
@@ -107,24 +91,24 @@ const PriceChecker = () => {
         />
       </div>
 
-      {/* Product Name Input with Dropdown */}
+      {/* Product Name Search */}
       <div className="input-group-container">
         <label className="input-label-text">Search by Product Name</label>
         <input
           type="text"
           className="input-field-box"
           placeholder="Enter Product Name"
-          value={productName}
-          onChange={handleProductSearch}
+          value={search}
+          onChange={handleSearch}
         />
-        {/* Dropdown */}
+        {/* Dropdown for search results */}
         {filteredProducts.length > 0 && (
           <ul className="dropdown-list">
             {filteredProducts.map((product) => (
               <li
                 key={product.id}
                 className="dropdown-item"
-                onClick={() => handleProductSelect(product)}
+                onClick={() => handleSelectProduct(product)}
               >
                 {product.name}
               </li>
@@ -133,21 +117,42 @@ const PriceChecker = () => {
         )}
       </div>
 
-      {/* Permanent Product Display Section */}
+      {/* Product Display */}
       <div className="product-display-container">
-        {/* Left Side: Product Details */}
+        {/* Left: Product Details */}
         <div className="product-details">
-          <h3 className="product-name">
-            {selectedProduct ? selectedProduct.name : "Product Name"}
-          </h3>
-          <p className="product-price">
-            {selectedProduct
-              ? `Price: Rs.${selectedProduct.price.toFixed(2)}`
-              : "Price: -"}
-          </p>
+          {selectedProduct && (
+            <>
+              <h3 className="product-name">
+                {selectedProduct ? selectedProduct.name : "Product Name"}
+              </h3>
+              <p className="product-price">
+                {selectedProduct
+                  ? `Price: Rs.${selectedProduct.price.toFixed(2)}`
+                  : "Price: -"}
+              </p>
+              <p>Bar Code: {selectedProduct.barcode}</p>
+              <p>Category: {selectedProduct.category}</p>
+              <p>Company: {selectedProduct.company}</p>
+              <p>Unit: {selectedProduct.unit}</p>
+              <p>
+                Expiry Date:{" "}
+                {selectedProduct?.expiryDate
+                  ? new Date(selectedProduct.expiryDate).toLocaleDateString(
+                      "en-GB",
+                      {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      }
+                    )
+                  : "N/A"}
+              </p>
+            </>
+          )}
         </div>
 
-        {/* Right Side: Image Box (Always Visible) */}
+        {/* Right: Product Image */}
         <div className="product-image-container">
           <img
             src={selectedProduct ? selectedProduct.image : placeholderImage}

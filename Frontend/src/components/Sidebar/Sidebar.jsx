@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   FaTachometerAlt,
@@ -16,6 +16,7 @@ import {
   FaBoxes,
   FaThList,
   FaTag,
+  FaExclamationCircle,
 } from "react-icons/fa";
 import "./Sidebar.css";
 import logo from "../../assets/images/pos-logo.png";
@@ -24,7 +25,21 @@ const Sidebar = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
 
+  useEffect(() => {
+    // Determine active dropdown based on current URL
+    if (location.pathname.startsWith("/sales")) {
+      setActiveDropdown("sales");
+    } else if (location.pathname.startsWith("/inventory")) {
+      setActiveDropdown("inventory");
+    } else if (location.pathname.startsWith("/reports")) {
+      setActiveDropdown("reports");
+    } else {
+      setActiveDropdown(null); // Close all dropdowns if no match
+    }
+  }, [location.pathname]);
+
   const toggleDropdown = (dropdown) => {
+    // Allow only one dropdown to be open at a time
     setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
   };
 
@@ -144,9 +159,19 @@ const Sidebar = () => {
               <span className="sidebar-text">Expired Products</span>
             </Link>
           </li>
+          <li
+            className={`sidebar-item ${
+              location.pathname === "/inventory/low-stock" ? "active" : ""
+            }`}
+          >
+            <Link to="/inventory/low-stock" className="sidebar-link">
+              <FaExclamationCircle className="sidebar-icon small-icon" />
+              <span className="sidebar-text">Low Stock</span>
+            </Link>
+          </li>
         </ul>
 
-        <li
+        {/* <li
           className={`sidebar-item ${
             location.pathname === "/customers" ? "active" : ""
           }`}
@@ -155,7 +180,7 @@ const Sidebar = () => {
             <FaUsers className="sidebar-icon" />
             <span className="sidebar-text">Customers</span>
           </Link>
-        </li>
+        </li> */}
 
         <li
           className={`sidebar-item ${
@@ -197,7 +222,7 @@ const Sidebar = () => {
           }`}
         >
           {/* Sales Reports */}
-          <li
+          {/* <li
             className={`sidebar-item ${
               location.pathname === "/reports/sales-reports" ? "active" : ""
             }`}
@@ -206,7 +231,7 @@ const Sidebar = () => {
               <FaChartLine className="sidebar-icon small-icon" />
               <span className="sidebar-text">Sales Reports</span>
             </Link>
-          </li>
+          </li> */}
 
           {/* Invoice Reports */}
           <li

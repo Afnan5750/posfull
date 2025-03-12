@@ -2,14 +2,16 @@ const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
   {
-    Probarcode: { type: String, required: true, unique: true },
+    Probarcode: { type: Number, required: true, unique: true },
     ProductName: { type: String, required: true },
     Category: { type: String, required: true },
-    RetailPrice: { type: Number, required: true }, // The price at which the product is sold to customers.
+    Company: { type: String, required: true },
     CostPrice: { type: Number, required: true }, // The price at which the product was purchased.
+    RetailPrice: { type: Number, required: true }, // The price at which the product is sold to customers.
     ProImage: { type: String, required: true },
     Unit: { type: String, required: true },
     Quantity: { type: Number, required: true, default: 0 },
+    ExpiryDate: { type: Date, required: true },
   },
   { timestamps: true }
 );
