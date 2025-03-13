@@ -106,7 +106,7 @@ const LowStock = () => {
     },
     {
       name: "Quantity",
-      selector: (row) => row.Quantity || "N/A",
+      selector: (row) => row.Quantity || "Out of Stock",
       sortable: true,
     },
     {

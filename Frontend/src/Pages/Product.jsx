@@ -38,6 +38,9 @@ const Product = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState("");
+  const [showUnitDropdown, setShowUnitDropdown] = useState(false); // Dropdown visibility state
+  const [unitError, setUnitError] = useState(""); // Error state
+  const unitOptions = ["KG", "Litre", "Piece", "Box", "Packet"];
 
   const openAddProductModal = () => setIsAddProductModalOpen(true);
   const closeAddProductModal = () => setIsAddProductModalOpen(false);
@@ -62,6 +65,11 @@ const Product = () => {
 
     fetchCategories();
   }, []);
+
+  // Filter units based on search query
+  const filteredUnits = unitOptions.filter((u) =>
+    u.toLowerCase().includes(unit.toLowerCase())
+  );
 
   // Filter categories based on search query
   const filteredCategories = categories.filter((cat) =>
@@ -283,7 +291,11 @@ const Product = () => {
       sortable: true,
     },
     { name: "Unit", selector: (row) => row.Unit, sortable: true },
-    { name: "Quantity", selector: (row) => row.Quantity, sortable: true },
+    {
+      name: "Quantity",
+      selector: (row) => (row.Quantity === 0 ? "Out of Stock" : row.Quantity),
+      sortable: true,
+    },
     {
       name: "Image",
       cell: (row) => (
@@ -461,12 +473,6 @@ const Product = () => {
                   setState: setCostPrice,
                 },
                 {
-                  label: "Unit",
-                  type: "text",
-                  state: unit,
-                  setState: setUnit,
-                },
-                {
                   label: "Quantity",
                   type: "number",
                   state: quantity,
@@ -494,6 +500,55 @@ const Product = () => {
                 </div>
               ))}
 
+              {/* Unit Searchable Dropdown */}
+              <div
+                className={`input-group ${
+                  unit || showUnitDropdown ? "focused" : ""
+                }`}
+              >
+                <input
+                  type="text"
+                  className="modal-input"
+                  value={unit}
+                  onChange={(e) => {
+                    setUnit(e.target.value);
+                    setUnitError(""); // Clear error when typing
+                  }}
+                  onFocus={() => setShowUnitDropdown(true)}
+                  onBlur={() => {
+                    setTimeout(() => setShowUnitDropdown(false), 200); // Delay to allow click selection
+
+                    // Validation: Check if entered unit exists in the static list
+                    if (!unitOptions.includes(unit) && unit !== "") {
+                      setUnitError(
+                        "Please select a valid unit from the dropdown."
+                      );
+                    }
+                  }}
+                />
+                <label className="floating-label">Unit</label>
+
+                {/* Dropdown List */}
+                {showUnitDropdown && filteredUnits.length > 0 && (
+                  <ul className="dropdown-list">
+                    {filteredUnits.map((u, index) => (
+                      <li
+                        key={index}
+                        onClick={() => {
+                          setUnit(u);
+                          setUnitError(""); // Clear error on valid selection
+                        }}
+                      >
+                        {u}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Error Message */}
+                {unitError && <p className="error-message">{unitError}</p>}
+              </div>
+
               {/* Category Searchable Input */}
               <div
                 className={`input-group ${
@@ -503,7 +558,6 @@ const Product = () => {
                 <input
                   type="text"
                   className="modal-input"
-                  placeholder="Type to search or add category"
                   value={category}
                   onChange={(e) => {
                     setCategory(e.target.value);

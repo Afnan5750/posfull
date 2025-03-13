@@ -47,7 +47,13 @@ const PriceChecker = () => {
     setSearch("");
 
     const foundProduct = products.find((p) => p.barcode === scannedBarcode);
-    setSelectedProduct(foundProduct || null);
+
+    if (foundProduct) {
+      setSelectedProduct(foundProduct);
+
+      // Clear input field after setting the selected product
+      setTimeout(() => setBarcode(""), 300);
+    }
   };
 
   // Handle product search

@@ -140,11 +140,14 @@
 }
 
 .quantity-input {
-  width: 50px;
-  padding: 5px;
+  width: 60px;
+  padding: 6px;
   text-align: center;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #f9fafb;
+  outline: none;
 }
 
 .remove-btn {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DataTable from "react-data-table-component";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
@@ -14,6 +14,8 @@ const Category = () => {
   const [updatedCategoryName, setUpdatedCategoryName] = useState("");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -34,6 +36,13 @@ const Category = () => {
     };
     fetchCategories();
   }, []);
+
+  // Auto-focus when modal opens
+  useEffect(() => {
+    if (addModalOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [addModalOpen]);
 
   const handleAddCategory = async () => {
     if (!newCategoryName) return;
@@ -185,6 +194,49 @@ const Category = () => {
         />
       )}
 
+      {addModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content custom-modal-content">
+            <span
+              className="modal-close custom-modal-close"
+              onClick={() => setAddModalOpen(false)}
+            >
+              &times;
+            </span>
+            <h3 className="modal-title">Add Category</h3>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAddCategory();
+              }}
+            >
+              <div
+                className={`input-group ${
+                  newCategoryName || isFocused ? "focused" : ""
+                }`}
+              >
+                <input
+                  type="text"
+                  className="modal-input"
+                  required
+                  ref={inputRef}
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                />
+                <label className="floating-label">Category Name</label>
+              </div>
+
+              <button type="submit" className="modal-submit-btn">
+                Add Category
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Edit Modal */}
       {editModalOpen && (
         <div className="modal-overlay">
@@ -223,44 +275,6 @@ const Category = () => {
 
               <button type="submit" className="modal-submit-btn">
                 Update Category
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {addModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content custom-modal-content">
-            <span
-              className="modal-close custom-modal-close"
-              onClick={() => setAddModalOpen(false)}
-            >
-              &times;
-            </span>
-            <h3 className="modal-title">Add Category</h3>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleAddCategory();
-              }}
-            >
-              <div
-                className={`input-group ${newCategoryName ? "focused" : ""}`}
-              >
-                <input
-                  type="text"
-                  className="modal-input"
-                  required
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                />
-                <label className="floating-label">Category Name</label>
-              </div>
-
-              <button type="submit" className="modal-submit-btn">
-                Add Category
               </button>
             </form>
           </div>

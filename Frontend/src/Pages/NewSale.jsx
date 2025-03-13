@@ -9,8 +9,8 @@ const Newsale = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [barcode, setBarcode] = useState("");
-  const [customerName, setCustomerName] = useState("Afnan");
-  const [customerContactNo, setCustomerContactNo] = useState("03333395115");
+  const [customerName, setCustomerName] = useState("");
+  const [customerContactNo, setCustomerContactNo] = useState("");
   const [cart, setCart] = useState([]);
   const [products, setProducts] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,6 +78,7 @@ const Newsale = () => {
           Company: product.Company,
           Unit: product.Unit,
           ExpiryDate: product.ExpiryDate,
+          quantity: product.Quantity,
           barcode: product.Probarcode.toString(),
         }));
         setProducts(productsFromAPI);
@@ -180,15 +181,9 @@ const Newsale = () => {
 
     // Calculate total profit and add Profit field to each item
     const updatedItems = cart.map((item, index) => {
-      const costPrice =
-        item.CostPrice !== undefined
-          ? item.CostPrice
-          : item.costprice !== undefined
-          ? item.costprice
-          : 0; // Ensure CostPrice exists
-
-      const retailPrice = item.RetailPrice || item.retailprice || 0;
-      const quantity = item.Quantity || item.quantity || 1;
+      const costPrice = item.CostPrice ?? item.costprice ?? 0;
+      const retailPrice = item.RetailPrice ?? item.retailprice ?? 0;
+      const quantity = item.Quantity ?? item.quantity ?? 1;
 
       // Calculate profit
       const profit = (retailPrice - costPrice) * quantity;
@@ -227,13 +222,13 @@ const Newsale = () => {
     console.log("Total Profit:", totalProfit);
 
     const invoiceData = {
-      customerName,
-      customerContactNo,
+      customerName: customerName || "Walk-in Customer",
+      customerContactNo: customerContactNo || 0,
       totalAmount: getTotalPrice().toFixed(2),
       paidAmount: paidAmount || 0,
       changeAmount: changeAmount || 0,
-      totalProfit, // Include total profit
-      items: updatedItems, // Updated items with Profit
+      totalProfit,
+      items: updatedItems,
     };
 
     try {
@@ -257,11 +252,11 @@ const Newsale = () => {
         alert("Invoice added successfully!");
       } else {
         console.error("Error adding invoice:", data);
-        alert("Error adding invoice!");
+        alert(data.message || "Error adding invoice!"); // Show server message
       }
     } catch (error) {
       console.error("Error adding invoice:", error);
-      alert("Error adding invoice!");
+      alert("Error adding invoice: " + error.message);
     }
   };
 
@@ -272,26 +267,23 @@ const Newsale = () => {
       return;
     }
 
-    // Calculate profit for each item
     const updatedItems = cart.map((item, index) => {
       const costPrice =
         item.CostPrice !== undefined && item.CostPrice !== null
           ? item.CostPrice
           : item.costprice !== undefined && item.costprice !== null
           ? item.costprice
-          : 0; // Ensure CostPrice exists
+          : 0;
 
       const retailPrice = item.RetailPrice || item.retailprice || 0;
       const quantity = item.Quantity || item.quantity || 1;
 
-      // Calculate profit
       const profit = (retailPrice - costPrice) * quantity;
 
-      // Debugging logs
       console.log(
         `Item ${index + 1}:`,
         `RetailPrice: ${retailPrice},`,
-        `CostPrice: ${costPrice},`, // Add this log
+        `CostPrice: ${costPrice},`,
         `Quantity: ${quantity},`,
         `Profit: ${profit}`
       );
@@ -302,8 +294,8 @@ const Newsale = () => {
         Category: item.Category || "Unknown",
         Company: item.Company || "Unknown",
         RetailPrice: retailPrice,
-        CostPrice: costPrice, // Ensure CostPrice is included
-        Profit: profit, // Corrected Profit calculation
+        CostPrice: costPrice,
+        Profit: profit,
         ProImage: item.ProImage || item.image,
         Unit: item.Unit || "N/A",
         Quantity: quantity,
@@ -311,23 +303,20 @@ const Newsale = () => {
       };
     });
 
-    // Calculate total profit for the updated invoice
     const totalProfit = updatedItems.reduce(
       (acc, item) => acc + item.Profit,
       0
     );
-
-    // Debugging log for totalProfit
     console.log("Total Profit:", totalProfit);
 
     const updatedInvoiceData = {
-      customerName,
-      customerContactNo,
+      customerName: customerName || "Walk-in Customer",
+      customerContactNo: customerContactNo || 0,
       totalAmount: getTotalPrice().toFixed(2),
       paidAmount: paidAmount || 0,
       changeAmount: changeAmount || 0,
-      totalProfit, // Include total profit
-      items: updatedItems, // Updated items with Profit
+      totalProfit,
+      items: updatedItems,
     };
 
     try {
@@ -356,13 +345,17 @@ const Newsale = () => {
         setCart([]);
 
         navigate("/sales/new-sale");
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
       } else {
         console.error("Error updating invoice:", data);
-        alert("Error updating invoice!");
+        alert(data.message || "Error updating invoice!");
       }
     } catch (error) {
       console.error("Error updating invoice:", error);
-      alert("Error updating invoice!");
+      alert(error.message || "Error updating invoice!");
     }
   };
 
@@ -429,7 +422,8 @@ const Newsale = () => {
                   className="dropdown-item"
                   onClick={() => handleSelectProduct(product)}
                 >
-                  {product.name} - Rs.{product.retailprice.toFixed(2)}
+                  {product.name} - Rs.{product.retailprice.toFixed(2)} (Qty:
+                  {product.quantity})
                 </li>
               ))}
             </ul>
@@ -597,7 +591,9 @@ const Newsale = () => {
                     }`}
                     onClick={handleAddInvoice}
                     disabled={
-                      paidAmount <= getTotalPrice() || isNaN(paidAmount)
+                      paidAmount < getTotalPrice() ||
+                      isNaN(paidAmount) ||
+                      paidAmount === ""
                     }
                   >
                     Confirm Payment
