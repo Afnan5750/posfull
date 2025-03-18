@@ -169,6 +169,22 @@ const ExpiredPro = () => {
     return text.replace(regex, "<span class='highlight'>$1</span>");
   };
 
+  // Keyboard Shortcuts
+  const handleKeyPress = (e) => {
+    if (e.key === "Escape") {
+      if (editModalOpen) {
+        setEditModalOpen(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [editModalOpen]);
+
   return (
     <div className="expired-product-table-container full-width">
       <h2 className="table-title">Expired Product Table</h2>

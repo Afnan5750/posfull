@@ -10,6 +10,7 @@ const LowStock = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [updatedQuantity, setUpdatedQuantity] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
 
   useEffect(() => {
     const fetchLowStockProducts = async () => {
@@ -26,12 +27,16 @@ const LowStock = () => {
   }, []);
 
   // Search filter
-  const filteredProducts = lowStockProducts.filter(
-    (item) =>
+  const filteredProducts = lowStockProducts.filter((item) => {
+    const matchesSearch =
       item.ProductName.toLowerCase().includes(searchText.toLowerCase()) ||
       item.Category.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.Probarcode.toString().includes(searchText)
-  );
+      item.Probarcode.toString().includes(searchText);
+
+    const matchesOutOfStock = showOutOfStock ? item.Quantity === 0 : true;
+
+    return matchesSearch && matchesOutOfStock;
+  });
 
   const openEditModal = (product) => {
     setSelectedProduct(product);
@@ -106,7 +111,12 @@ const LowStock = () => {
     },
     {
       name: "Quantity",
-      selector: (row) => row.Quantity || "Out of Stock",
+      selector: (row) =>
+        row.Quantity === 0 ? (
+          <span className="out-of-stock">Out of Stock</span>
+        ) : (
+          row.Quantity
+        ),
       sortable: true,
     },
     {
@@ -163,11 +173,36 @@ const LowStock = () => {
     return text.replace(regex, "<span class='highlight'>$1</span>");
   };
 
+  // Keyboard Shortcuts
+  const handleKeyPress = (e) => {
+    if (e.key === "Escape") {
+      if (setEditModalOpen) {
+        setEditModalOpen(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [setEditModalOpen]);
+
   return (
     <div className="low-stock-table-container full-width">
       <h2 className="table-title">Low Stock Products</h2>
 
-      <div className="table-controls-right">
+      <div className="table-controls">
+        <div className="checkbox-container">
+          <input
+            type="checkbox"
+            id="outOfStock"
+            checked={showOutOfStock}
+            onChange={() => setShowOutOfStock(!showOutOfStock)}
+          />
+          <label htmlFor="outOfStock">Out of Stock</label>
+        </div>
         <input
           type="text"
           placeholder="Search product..."

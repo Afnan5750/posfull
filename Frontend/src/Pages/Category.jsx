@@ -166,6 +166,25 @@ const Category = () => {
     return text.replace(regex, "<span class='highlight'>$1</span>");
   };
 
+  // Keyboard Shortcuts
+  const handleKeyPress = (e) => {
+    if (e.key === "Escape") {
+      if (addModalOpen) {
+        setAddModalOpen(false);
+      }
+      if (editModalOpen) {
+        setEditModalOpen(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [editModalOpen, addModalOpen]);
+
   return (
     <div className="category-table-container full-width">
       <h2 className="table-title">Category Table</h2>

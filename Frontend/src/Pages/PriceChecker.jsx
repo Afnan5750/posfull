@@ -9,6 +9,9 @@ const PriceChecker = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const barcodeInputRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const addToCartBtnRef = useRef(null);
 
   // Fetch products from the API
   useEffect(() => {
@@ -73,12 +76,48 @@ const PriceChecker = () => {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (filteredProducts.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      setActiveIndex((prev) =>
+        prev < filteredProducts.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      setActiveIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredProducts.length - 1
+      );
+    } else if (e.key === "Enter" && activeIndex >= 0) {
+      handleSelectProduct(filteredProducts[activeIndex]);
+      setActiveIndex(-1);
+
+      // Move focus to the "Add to Cart" button after selecting a product
+      setTimeout(() => {
+        addToCartBtnRef.current?.focus();
+      }, 100);
+    }
+  };
+
   // Handle product selection from dropdown
   const handleSelectProduct = (product) => {
     setSelectedProduct(product);
     setSearch(product.name);
     setFilteredProducts([]);
   };
+
+  const handleKeyPress = (e) => {
+    if (e.shiftKey && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      searchInputRef.current?.focus(); // Focus on Search Product field
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []);
 
   return (
     <div className="price-checker-container">
@@ -88,7 +127,7 @@ const PriceChecker = () => {
       <div className="input-group-container">
         <label className="input-label-text">Scan or Enter Barcode</label>
         <input
-          type="text"
+          type="number"
           className="input-field-box"
           placeholder="Scan Barcode"
           value={barcode}
@@ -106,14 +145,18 @@ const PriceChecker = () => {
           placeholder="Enter Product Name"
           value={search}
           onChange={handleSearch}
+          ref={searchInputRef}
+          onKeyDown={handleKeyDown}
         />
         {/* Dropdown for search results */}
         {filteredProducts.length > 0 && (
           <ul className="dropdown-list">
-            {filteredProducts.map((product) => (
+            {filteredProducts.map((product, index) => (
               <li
                 key={product.id}
-                className="dropdown-item"
+                className={`dropdown-item ${
+                  index === activeIndex ? "active" : ""
+                }`}
                 onClick={() => handleSelectProduct(product)}
               >
                 {product.name}

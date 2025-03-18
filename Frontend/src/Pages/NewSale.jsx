@@ -25,6 +25,7 @@ const Newsale = () => {
   const [lastUsedInput, setLastUsedInput] = useState("barcode");
   const searchInputRef = useRef(null);
   const addToCartBtnRef = useRef(null);
+  const quantityInputRef = useRef(null);
 
   // for fetch invoice data in console
   const fetchInvoiceData = async (id) => {
@@ -429,11 +430,26 @@ const Newsale = () => {
   //   }
   // };
 
-  // Keyboard Shortcuts for Payment using sigle "p"
+  // Keyboard Shortcuts
   const handleKeyPress = (e) => {
     if (e.key.toLowerCase() === "p") {
       e.preventDefault(); // Prevent default behavior
       document.querySelector(".modal-submit-btn")?.click(); // Click the first matching button
+    }
+    if (e.shiftKey && e.key.toLowerCase() === "q") {
+      e.preventDefault(); // Prevent default behavior
+      document.querySelector(".quantity-input")?.focus(); // Focus on quantity input
+    }
+    if (e.shiftKey && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      searchInputRef.current?.focus(); // Focus on Search Product field
+    }
+    if (e.key === "Escape" && isModalOpen) {
+      e.preventDefault();
+      closeModal(); // Close the modal if it's open
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === "c") {
+      clearCart(); // Call function to remove all items from the cart
     }
   };
 
@@ -442,7 +458,11 @@ const Newsale = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, []);
+  }, [isModalOpen]);
+
+  const clearCart = () => {
+    setCart([]); // Assuming you are using state to manage the cart
+  };
 
   return (
     <div className="sales-container">
@@ -476,7 +496,7 @@ const Newsale = () => {
         {/* Barcode Input */}
         <label className="input-label-text">Scan Barcode</label>
         <input
-          type="text"
+          type="number"
           className="input-field-box"
           placeholder="Scan or Enter Barcode"
           value={barcode}
@@ -562,6 +582,7 @@ const Newsale = () => {
                       min="1"
                       value={item.quantity}
                       className="quantity-input"
+                      ref={quantityInputRef}
                       onChange={(e) =>
                         handleQuantityChange(item.id, parseInt(e.target.value))
                       }

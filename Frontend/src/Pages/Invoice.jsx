@@ -143,6 +143,20 @@ const Invoice = () => {
     },
   ];
 
+  // Keyboard Shortcuts
+  const handleKeyPress = (e) => {
+    if (e.key === "Escape" && isModalOpen) {
+      setIsModalOpen(false); // Close the modal when Escape is pressed
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [isModalOpen]);
+
   return (
     <div className="invoice-container full-width">
       <h2 className="table-title">Invoice Table</h2>

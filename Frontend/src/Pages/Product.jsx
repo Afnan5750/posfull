@@ -354,6 +354,28 @@ const Product = () => {
       item.Category?.toLowerCase().includes(searchText.toLowerCase())
   );
 
+  // Keyboard Shortcuts
+  const handleKeyPress = (e) => {
+    if (e.key === "Escape") {
+      if (showModal) {
+        setShowModal(false);
+      }
+      if (isAddProductModalOpen) {
+        setIsAddProductModalOpen(false);
+      }
+      if (isEditProductModalOpen) {
+        setIsEditProductModalOpen(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [showModal, isAddProductModalOpen, isEditProductModalOpen]);
+
   return (
     <div className="product-table-container full-width">
       <h2 className="table-title">Product Table</h2>
