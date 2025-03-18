@@ -74,6 +74,11 @@
   background-color: #f0f0f0;
 }
 
+.dropdown-item.active {
+  background-color: #1e1e2f;
+  color: white;
+}
+
 /* Product Image Box */
 .product-image-wrapper {
   width: 120px;

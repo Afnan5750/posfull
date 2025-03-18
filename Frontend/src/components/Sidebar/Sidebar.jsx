@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaShoppingCart,
@@ -24,6 +24,7 @@ import logo from "../../assets/images/pos-logo.png";
 const Sidebar = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Determine active dropdown based on current URL
@@ -39,15 +40,18 @@ const Sidebar = () => {
   }, [location.pathname]);
 
   const toggleDropdown = (dropdown) => {
-    // Allow only one dropdown to be open at a time
     setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    sessionStorage.removeItem("userData");
-    console.log("logout");
-    // navigate("/login");
+    const confirmLogout = window.confirm("Are you sure you want to log out?");
+
+    if (confirmLogout) {
+      localStorage.removeItem("token");
+      console.log("User logged out");
+
+      navigate("/login");
+    }
   };
 
   return (
@@ -269,7 +273,7 @@ const Sidebar = () => {
       </ul>
       <li className="sidebar-item sidebar-logout" onClick={handleLogout}>
         <div className="sidebar-link">
-          <FaSignOutAlt className="sidebar-icon sidebar-logout-icon" />
+          <FaSignOutAlt className="sidebar-icon" />
           <span className="sidebar-text">Logout</span>
         </div>
       </li>

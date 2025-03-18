@@ -20,6 +20,11 @@ const Newsale = () => {
   const customerPaidRef = useRef(null);
   const { invoiceId } = useParams();
   const navigate = useNavigate();
+  const dropdownRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [lastUsedInput, setLastUsedInput] = useState("barcode");
+  const searchInputRef = useRef(null);
+  const addToCartBtnRef = useRef(null);
 
   // for fetch invoice data in console
   const fetchInvoiceData = async (id) => {
@@ -99,26 +104,68 @@ const Newsale = () => {
     }
   }, [isModalOpen]);
 
+  // Handle search input change
   const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
-    setSearch(query);
-    if (query.length > 0) {
-      const filtered = products.filter((p) =>
-        p.name.toLowerCase().startsWith(query)
+    const value = e.target.value;
+    setSearch(value);
+    setLastUsedInput("search"); // Track last used input
+
+    if (value.trim() !== "") {
+      const filtered = products.filter((product) =>
+        product.name.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredProducts(filtered);
     } else {
       setFilteredProducts([]);
-      setSelectedProduct(null);
     }
   };
 
+  // Handle selecting product from search dropdown
   const handleSelectProduct = (product) => {
     setSelectedProduct(product);
     setSearch(product.name);
     setFilteredProducts([]);
+    setActiveIndex(-1);
   };
 
+  // Close dropdown when clicking outside
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setFilteredProducts([]);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Handle keyboard navigation in dropdown
+  const handleKeyDown = (e) => {
+    if (filteredProducts.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      setActiveIndex((prev) =>
+        prev < filteredProducts.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      setActiveIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredProducts.length - 1
+      );
+    } else if (e.key === "Enter" && activeIndex >= 0) {
+      handleSelectProduct(filteredProducts[activeIndex]);
+      setActiveIndex(-1);
+
+      // Move focus to the "Add to Cart" button after selecting a product
+      setTimeout(() => {
+        addToCartBtnRef.current?.focus();
+      }, 100);
+    }
+  };
+
+  // Handle adding to cart
   const handleAddToCart = (product) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
@@ -131,9 +178,19 @@ const Newsale = () => {
       }
       return [...prevCart, { ...product, quantity: 1 }];
     });
+
     setSelectedProduct(null);
     setSearch("");
     setBarcode("");
+
+    // Focus back on last used input
+    setTimeout(() => {
+      if (lastUsedInput === "search") {
+        searchInputRef.current?.focus();
+      } else {
+        barcodeInputRef.current?.focus();
+      }
+    }, 100);
   };
 
   const handleRemoveFromCart = (id) => {
@@ -160,6 +217,7 @@ const Newsale = () => {
   const handleBarcodeSearch = (e) => {
     const scannedBarcode = e.target.value;
     setBarcode(scannedBarcode);
+    setLastUsedInput("barcode"); // Track last used input
 
     const foundProduct = products.find((p) => p.barcode === scannedBarcode);
     if (foundProduct) {
@@ -363,6 +421,29 @@ const Newsale = () => {
     setchangeAmount((paidAmount - getTotalPrice()).toFixed(2));
   }, [paidAmount, getTotalPrice]);
 
+  // Keyboard Shortcuts for Payment ctrl + p
+  // const handleKeyPress = (e) => {
+  //   if (e.ctrlKey && e.key.toLowerCase() === "p") {
+  //     e.preventDefault();
+  //     document.getElementById("payButton")?.click();
+  //   }
+  // };
+
+  // Keyboard Shortcuts for Payment using sigle "p"
+  const handleKeyPress = (e) => {
+    if (e.key.toLowerCase() === "p") {
+      e.preventDefault(); // Prevent default behavior
+      document.querySelector(".modal-submit-btn")?.click(); // Click the first matching button
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []);
+
   return (
     <div className="sales-container">
       <h2 className="heading-text">New Sale</h2>
@@ -405,7 +486,7 @@ const Newsale = () => {
       </div>
 
       <div className="search-cart-container">
-        <div className="input-group-container">
+        <div className="input-group-container" ref={dropdownRef}>
           <label className="input-label-text">Search Product</label>
           <input
             type="text"
@@ -413,16 +494,20 @@ const Newsale = () => {
             placeholder="Search Product"
             value={search}
             onChange={handleSearch}
+            onKeyDown={handleKeyDown}
+            ref={searchInputRef}
           />
           {filteredProducts.length > 0 && (
             <ul className="dropdown-list">
-              {filteredProducts.map((product) => (
+              {filteredProducts.map((product, index) => (
                 <li
                   key={product.id}
-                  className="dropdown-item"
+                  className={`dropdown-item ${
+                    index === activeIndex ? "active" : ""
+                  }`}
                   onClick={() => handleSelectProduct(product)}
                 >
-                  {product.name} - Rs.{product.retailprice.toFixed(2)} (Qty:
+                  {product.name} - Rs.{product.retailprice.toFixed(2)} (Qty:{" "}
                   {product.quantity})
                 </li>
               ))}
@@ -434,6 +519,7 @@ const Newsale = () => {
           <button
             className="add-to-cart-btn"
             onClick={() => handleAddToCart(selectedProduct)}
+            ref={addToCartBtnRef}
           >
             Add to Cart
           </button>
@@ -542,6 +628,7 @@ const Newsale = () => {
               </div>
 
               {/* Customer Paid */}
+
               <div className="input-group">
                 <input
                   type="number"
@@ -556,6 +643,20 @@ const Newsale = () => {
                     }
                   }}
                   onChange={(e) => setpaidAmount(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault(); // Prevent form submission behavior
+
+                      // Determine which button to focus on
+                      if (invoiceId) {
+                        document.getElementById("updateInvoiceButton")?.focus();
+                      } else {
+                        document
+                          .getElementById("confirmPaymentButton")
+                          ?.focus();
+                      }
+                    }
+                  }}
                 />
                 <label className="floating-label">Customer Paid (Rs.)</label>
               </div>
@@ -574,6 +675,7 @@ const Newsale = () => {
               <div className="modal-buttons">
                 {invoiceId ? (
                   <button
+                    id="updateInvoiceButton"
                     className="modal-submit-btn update-btn"
                     onClick={handleUpdateInvoice}
                     disabled={
@@ -584,6 +686,7 @@ const Newsale = () => {
                   </button>
                 ) : (
                   <button
+                    id="confirmPaymentButton"
                     className={`modal-submit-btn confirm-btn ${
                       paidAmount > getTotalPrice()
                         ? "enabled-btn"
