@@ -252,6 +252,8 @@ router.put("/update-lowstock/:id", async (req, res) => {
 // Get Total Number of Products and Total Revenue
 router.get("/productstats", async (req, res) => {
   try {
+    const today = new Date(); // Get today's date
+
     // Get total number of products
     const totalProducts = await Product.countDocuments();
 
@@ -264,10 +266,24 @@ router.get("/productstats", async (req, res) => {
         },
       },
     ]);
-
     const totalRevenue = totalRevenueResult[0]?.totalRevenue || 0;
 
-    res.status(200).json({ totalProducts, totalRevenue });
+    // Get expired products (ExpiryDate is in the past)
+    const expiredProducts = await Product.countDocuments({
+      ExpiryDate: { $lt: today },
+    });
+
+    // Get out-of-stock products (Quantity is 0 or less)
+    const outOfStockProducts = await Product.countDocuments({
+      Quantity: { $lte: 0 },
+    });
+
+    res.status(200).json({
+      totalProducts,
+      totalRevenue,
+      expiredProducts,
+      outOfStockProducts,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

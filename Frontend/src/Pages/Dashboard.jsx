@@ -8,6 +8,7 @@ import {
   FaFileInvoice,
   FaTags,
   FaWallet,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import "../Styles/Dashboard.css";
 
@@ -15,6 +16,8 @@ const Dashboard = () => {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalCategories, setTotalCategories] = useState(0);
+  const [expiredProducts, setExpiredProducts] = useState(0);
+  const [outOfStockProducts, setOutOfStockProducts] = useState(0);
   const [salesData, setSalesData] = useState({
     totalSale: 0,
     monthlySale: 0,
@@ -55,6 +58,8 @@ const Dashboard = () => {
 
         setTotalRevenue(productStats.totalRevenue);
         setTotalProducts(productStats.totalProducts);
+        setExpiredProducts(productStats.expiredProducts); // Set Expired Products
+        setOutOfStockProducts(productStats.outOfStockProducts); // Set Out-of-Stock Products
         setSalesData(salesStats);
         setInvoiceData(invoiceStats);
         setTotalCategories(categoryStats.total);
@@ -167,6 +172,20 @@ const Dashboard = () => {
             {totalProducts.toLocaleString()}
           </h3>
           <p className="dashboard-card-text">Total Products</p>
+        </div>
+        <div className="dashboard-card">
+          <div className="dashboard-icon-container">
+            <FaExclamationTriangle className="dashboard-icon out-of-stock" />
+          </div>
+          <h3 className="dashboard-card-title">{outOfStockProducts}</h3>
+          <p className="dashboard-card-text">Out of Stock Products</p>
+        </div>
+        <div className="dashboard-card">
+          <div className="dashboard-icon-container">
+            <FaExclamationTriangle className="dashboard-icon expired-products" />
+          </div>
+          <h3 className="dashboard-card-title">{expiredProducts}</h3>
+          <p className="dashboard-card-text">Expired Products</p>
         </div>
         <div className="dashboard-card">
           <div className="dashboard-icon-container">

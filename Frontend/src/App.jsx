@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -6,6 +6,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import { FaInfoCircle } from "react-icons/fa";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Newsale from "./Pages/NewSale";
 import Product from "./Pages/Product";
@@ -25,12 +26,16 @@ import "./App.css";
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  const isLoginPage = location.pathname === "/login"; // Hide sidebar on login page
+  const isLoginPage = location.pathname === "/login";
 
   return (
     <div className="app-container">
       {!isLoginPage && <Sidebar />}
       <div className="content">{children}</div>
+
+      <div className="hint-icon-container" title="Ctrl + Shift + H">
+        <FaInfoCircle className="hint-icon" />
+      </div>
     </div>
   );
 };

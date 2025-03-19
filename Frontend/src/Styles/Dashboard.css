@@ -84,3 +84,10 @@
 .categories {
   color: #795548;
 }
+.dashboard-icon.out-of-stock {
+  color: #dc3545;
+}
+
+.dashboard-icon.expired-products {
+  color: #ff9800;
+}

@@ -22,7 +22,6 @@ const Login = () => {
       );
 
       localStorage.setItem("token", response.data.token);
-      alert("Login successful!");
       window.location.href = "/dashboard";
     } catch (error) {
       alert(error.response?.data?.message || "Login failed. Try again.");
