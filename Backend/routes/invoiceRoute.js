@@ -246,4 +246,124 @@ router.get("/getMonthlyInvoiceCount", async (req, res) => {
   }
 });
 
+// Get Total , Monthly and Today Sales
+router.get("/salesstats", async (req, res) => {
+  try {
+    const today = new Date();
+    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // Aggregate sales data
+    const salesData = await Invoice.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalSale: { $sum: "$totalAmount" },
+          monthlySale: {
+            $sum: {
+              $cond: [
+                { $gte: ["$createdAt", startOfMonth] },
+                "$totalAmount",
+                0,
+              ],
+            },
+          },
+          todaySale: {
+            $sum: {
+              $cond: [
+                { $gte: ["$createdAt", startOfToday] },
+                "$totalAmount",
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    const result = salesData[0] || {
+      totalSale: 0,
+      monthlySale: 0,
+      todaySale: 0,
+    };
+
+    res.status(200).json(result);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error calculating sales", error: error.message });
+  }
+});
+
+// Get Total , Monthly and Today Invoices and Profit
+router.get("/getInvoiceStats", async (req, res) => {
+  try {
+    const startOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
+    const endOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth() + 1,
+      0,
+      23,
+      59,
+      59
+    );
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const [
+      totalInvoices,
+      invoicesThisMonth,
+      invoicesToday,
+      totalProfitResult,
+      monthlyProfitResult,
+      todayProfitResult,
+    ] = await Promise.all([
+      Invoice.countDocuments(), // Total invoices count
+      Invoice.countDocuments({
+        createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+      }), // Monthly invoices count
+      Invoice.countDocuments({
+        createdAt: { $gte: startOfDay, $lte: endOfDay },
+      }), // Today's invoices count
+      Invoice.aggregate([
+        { $group: { _id: null, totalProfit: { $sum: "$totalProfit" } } },
+      ]), // Total profit
+      Invoice.aggregate([
+        { $match: { createdAt: { $gte: startOfMonth, $lte: endOfMonth } } },
+        { $group: { _id: null, monthlyProfit: { $sum: "$totalProfit" } } },
+      ]), // Monthly profit
+      Invoice.aggregate([
+        { $match: { createdAt: { $gte: startOfDay, $lte: endOfDay } } },
+        { $group: { _id: null, todayProfit: { $sum: "$totalProfit" } } },
+      ]), // Today's profit
+    ]);
+
+    res.status(200).json({
+      totalInvoices,
+      invoicesThisMonth,
+      invoicesToday,
+      totalProfit:
+        totalProfitResult.length > 0 ? totalProfitResult[0].totalProfit : 0,
+      monthlyProfit:
+        monthlyProfitResult.length > 0
+          ? monthlyProfitResult[0].monthlyProfit
+          : 0,
+      todayProfit:
+        todayProfitResult.length > 0 ? todayProfitResult[0].todayProfit : 0,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching invoice statistics",
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;

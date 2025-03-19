@@ -156,16 +156,6 @@ router.get("/getproducts", async (req, res) => {
   }
 });
 
-// Get Total No. of Product Route
-router.get("/totalproducts", async (req, res) => {
-  try {
-    const totalProducts = await Product.countDocuments();
-    res.status(200).json({ total: totalProducts });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Get Expired Product Route
 router.get("/expired-products", async (req, res) => {
   try {
@@ -254,6 +244,30 @@ router.put("/update-lowstock/:id", async (req, res) => {
     res
       .status(200)
       .json({ message: "Product updated successfully", updatedProduct });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get Total Number of Products and Total Revenue
+router.get("/productstats", async (req, res) => {
+  try {
+    // Get total number of products
+    const totalProducts = await Product.countDocuments();
+
+    // Get total revenue considering quantity
+    const totalRevenueResult = await Product.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $multiply: ["$RetailPrice", "$Quantity"] } },
+        },
+      },
+    ]);
+
+    const totalRevenue = totalRevenueResult[0]?.totalRevenue || 0;
+
+    res.status(200).json({ totalProducts, totalRevenue });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

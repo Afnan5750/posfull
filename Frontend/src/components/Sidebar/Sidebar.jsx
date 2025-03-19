@@ -57,7 +57,7 @@ const Sidebar = () => {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <Link to="/">
+        <Link to="/dashboard">
           <img src={logo} alt="POS System Logo" className="sidebar-logo" />
         </Link>
       </div>
@@ -273,7 +273,7 @@ const Sidebar = () => {
       </ul>
       <li className="sidebar-item sidebar-logout" onClick={handleLogout}>
         <div className="sidebar-link">
-          <FaSignOutAlt className="sidebar-icon" />
+          <FaSignOutAlt className="sidebar-icon logout-sidebar-icon" />
           <span className="sidebar-text">Logout</span>
         </div>
       </li>

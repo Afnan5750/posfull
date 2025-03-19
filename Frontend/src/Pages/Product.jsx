@@ -41,6 +41,8 @@ const Product = () => {
   const [showUnitDropdown, setShowUnitDropdown] = useState(false); // Dropdown visibility state
   const [unitError, setUnitError] = useState(""); // Error state
   const unitOptions = ["KG", "Litre", "Piece", "Box", "Packet"];
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(-1);
 
   const openAddProductModal = () => setIsAddProductModalOpen(true);
   const closeAddProductModal = () => setIsAddProductModalOpen(false);
@@ -75,6 +77,40 @@ const Product = () => {
   const filteredCategories = categories.filter((cat) =>
     cat.categoryName.toLowerCase().includes(category.toLowerCase())
   );
+
+  const handleUnitKeyDown = (e) => {
+    if (showUnitDropdown) {
+      if (e.key === "ArrowDown") {
+        setUnitIndex((prev) =>
+          prev < filteredUnits.length - 1 ? prev + 1 : prev
+        );
+      } else if (e.key === "ArrowUp") {
+        setUnitIndex((prev) => (prev > 0 ? prev - 1 : prev));
+      } else if (e.key === "Enter" && unitIndex >= 0) {
+        setUnit(filteredUnits[unitIndex]);
+        setUnitIndex(-1);
+        setShowUnitDropdown(false);
+        setUnitError("");
+      }
+    }
+  };
+
+  const handleCategoryKeyDown = (e) => {
+    if (showCategoryDropdown) {
+      if (e.key === "ArrowDown") {
+        setCategoryIndex((prev) =>
+          prev < filteredCategories.length - 1 ? prev + 1 : prev
+        );
+      } else if (e.key === "ArrowUp") {
+        setCategoryIndex((prev) => (prev > 0 ? prev - 1 : prev));
+      } else if (e.key === "Enter" && categoryIndex >= 0) {
+        setCategory(filteredCategories[categoryIndex].categoryName);
+        setCategoryIndex(-1);
+        setShowCategoryDropdown(false);
+        setCategoryError("");
+      }
+    }
+  };
 
   // Fetch products from API
   useEffect(() => {
@@ -293,7 +329,12 @@ const Product = () => {
     { name: "Unit", selector: (row) => row.Unit, sortable: true },
     {
       name: "Quantity",
-      selector: (row) => (row.Quantity === 0 ? "Out of Stock" : row.Quantity),
+      selector: (row) =>
+        row.Quantity === 0 ? (
+          <span className="out-of-stock">Out of Stock</span>
+        ) : (
+          row.Quantity
+        ),
       sortable: true,
     },
     {
@@ -535,11 +576,26 @@ const Product = () => {
                   onChange={(e) => {
                     setUnit(e.target.value);
                     setUnitError(""); // Clear error when typing
+                    setActiveIndex(-1); // Reset active index on input change
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      setActiveIndex((prev) =>
+                        prev < filteredUnits.length - 1 ? prev + 1 : 0
+                      );
+                    } else if (e.key === "ArrowUp") {
+                      setActiveIndex((prev) =>
+                        prev > 0 ? prev - 1 : filteredUnits.length - 1
+                      );
+                    } else if (e.key === "Enter" && activeIndex !== -1) {
+                      setUnit(filteredUnits[activeIndex]);
+                      setUnitError(""); // Clear error on valid selection
+                      setShowUnitDropdown(false);
+                    }
                   }}
                   onFocus={() => setShowUnitDropdown(true)}
                   onBlur={() => {
                     setTimeout(() => setShowUnitDropdown(false), 200); // Delay to allow click selection
-
                     // Validation: Check if entered unit exists in the static list
                     if (!unitOptions.includes(unit) && unit !== "") {
                       setUnitError(
@@ -556,9 +612,12 @@ const Product = () => {
                     {filteredUnits.map((u, index) => (
                       <li
                         key={index}
+                        className={index === activeIndex ? "active" : ""}
+                        onMouseEnter={() => setActiveIndex(index)}
                         onClick={() => {
                           setUnit(u);
                           setUnitError(""); // Clear error on valid selection
+                          setShowUnitDropdown(false);
                         }}
                       >
                         {u}
@@ -571,7 +630,6 @@ const Product = () => {
                 {unitError && <p className="error-message">{unitError}</p>}
               </div>
 
-              {/* Category Searchable Input */}
               <div
                 className={`input-group ${
                   category || showDropdown ? "focused" : ""
@@ -584,11 +642,31 @@ const Product = () => {
                   onChange={(e) => {
                     setCategory(e.target.value);
                     setError(""); // Clear error when typing
+                    setActiveCategoryIndex(-1); // Reset active index on input change
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      setActiveCategoryIndex((prev) =>
+                        prev < filteredCategories.length - 1 ? prev + 1 : 0
+                      );
+                    } else if (e.key === "ArrowUp") {
+                      setActiveCategoryIndex((prev) =>
+                        prev > 0 ? prev - 1 : filteredCategories.length - 1
+                      );
+                    } else if (
+                      e.key === "Enter" &&
+                      activeCategoryIndex !== -1
+                    ) {
+                      setCategory(
+                        filteredCategories[activeCategoryIndex].categoryName
+                      );
+                      setError(""); // Clear error on valid selection
+                      setShowDropdown(false);
+                    }
                   }}
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => {
                     setTimeout(() => setShowDropdown(false), 200); // Delay to allow click selection
-
                     // Validation: Check if entered category exists in dropdown
                     const isCategoryValid = filteredCategories.some(
                       (cat) =>
@@ -608,12 +686,17 @@ const Product = () => {
                 {/* Dropdown List */}
                 {showDropdown && filteredCategories.length > 0 && (
                   <ul className="dropdown-list">
-                    {filteredCategories.map((cat) => (
+                    {filteredCategories.map((cat, index) => (
                       <li
                         key={cat._id}
+                        className={
+                          index === activeCategoryIndex ? "active" : ""
+                        }
+                        onMouseEnter={() => setActiveCategoryIndex(index)}
                         onClick={() => {
                           setCategory(cat.categoryName);
                           setError(""); // Clear error on valid selection
+                          setShowDropdown(false);
                         }}
                       >
                         {cat.categoryName}

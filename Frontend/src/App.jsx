@@ -16,11 +16,12 @@ import PriceChecker from "./Pages/PriceChecker";
 import LowStock from "./Pages/LowStock";
 import InvoiceReport from "./Pages/InvoiceReport";
 import Profile from "./Pages/Profile";
+import Dashboard from "./Pages/Dashboard";
 import Login from "./components/Login/Login";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Hint from "./components/Hint/Hint";
-import "./App.css";
 import Calculator from "./components/Calculator/Calculator";
+import "./App.css";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -79,19 +80,9 @@ const App = () => {
         e.preventDefault();
         navigate("/profile");
       }
-      if (e.key.toLowerCase() === "f") {
+      if (e.ctrlKey && e.key.toLowerCase() === "l") {
         e.preventDefault();
-        toggleFullScreen();
-      }
-    };
-
-    const toggleFullScreen = () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch((err) => {
-          console.error("Error attempting to enable fullscreen:", err.message);
-        });
-      } else {
-        document.exitFullscreen();
+        handleLogout();
       }
     };
 
@@ -100,6 +91,14 @@ const App = () => {
       document.removeEventListener("keydown", handleKeyPress);
     };
   }, [navigate]);
+
+  const handleLogout = () => {
+    const confirmLogout = window.confirm("Are you sure you want to log out?");
+    if (confirmLogout) {
+      localStorage.removeItem("token");
+      navigate("/login");
+    }
+  };
 
   return (
     <>
@@ -117,6 +116,7 @@ const App = () => {
             <ProtectedRoute>
               <Layout>
                 <Routes>
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/sales/new-sale" element={<Newsale />} />
                   <Route path="/sales/invoices" element={<Invoice />} />
                   <Route

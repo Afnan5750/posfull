@@ -272,3 +272,8 @@
   background: #1e1e2f;
   color: white;
 }
+
+.dropdown-list li.active {
+  background-color: #1e1e2f;
+  color: white;
+}

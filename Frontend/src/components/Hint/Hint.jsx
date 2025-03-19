@@ -27,7 +27,7 @@ const Hint = () => {
     General: [
       { keys: "Esc", description: "Close the Modal" },
       { keys: "Alt + C", description: "Open Calculator Modal" },
-      { keys: "F", description: "Toggle Full Screen" },
+      { keys: "Ctrl + L", description: "Logout" },
       { keys: "Ctrl + Shift + H", description: "Hint Modal" },
     ],
     Dashboard: [{ keys: "Shift + D", description: "Go to Dashboard" }],
