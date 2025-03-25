@@ -104,7 +104,7 @@ const Profile = () => {
       return;
     }
 
-    // Ensure that oldPassword is provided
+    // Ensure that currentPassword (oldPassword) is provided
     if (!userDetails.oldPassword) {
       setError("Current password is required to update the store details.");
       clearMessages();
@@ -114,7 +114,8 @@ const Profile = () => {
     try {
       const formData = new FormData();
       formData.append("storeName", editedStoreName);
-      formData.append("oldPassword", userDetails.oldPassword);
+      formData.append("currentPassword", userDetails.oldPassword); // Updated field name
+      formData.append("username", userDetails.username); // Ensure username is sent
 
       // Append image if a new one is selected
       if (selectedImage) {
@@ -140,6 +141,7 @@ const Profile = () => {
         // If an image was updated, refresh the preview
         if (selectedImage) {
           setLogo(URL.createObjectURL(selectedImage));
+          setSelectedImage(null); // Reset selectedImage after successful upload
         }
       }
 
@@ -152,7 +154,7 @@ const Profile = () => {
       setEditing(false);
       clearMessages();
     } catch (error) {
-      setError(error.response?.data?.message || "Error updating details.");
+      setError(error.response?.data?.error || "Error updating details."); // Fixed error message handling
       clearMessages();
     }
   };
