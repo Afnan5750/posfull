@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import "../Styles/NewSale.css";
 import { FaTrash } from "react-icons/fa";
 import placeholderImage from "../assets/images/product-placeholder.jpg";
+import logo from "../assets/images/black-pos-logo.png";
 
 const Newsale = () => {
   const [search, setSearch] = useState("");
@@ -16,6 +17,7 @@ const Newsale = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [paidAmount, setpaidAmount] = useState();
   const [changeAmount, setchangeAmount] = useState();
+  const [invoiceNo, setInvoiceNo] = useState(null);
   const barcodeInputRef = useRef(null);
   const customerPaidRef = useRef(null);
   const { invoiceId } = useParams();
@@ -26,6 +28,7 @@ const Newsale = () => {
   const searchInputRef = useRef(null);
   const addToCartBtnRef = useRef(null);
   const quantityInputRef = useRef(null);
+  const [customerDetails, setCustomerDetails] = useState({});
 
   // for fetch invoice data in console
   const fetchInvoiceData = async (id) => {
@@ -40,6 +43,7 @@ const Newsale = () => {
         setCustomerName(data.customerName || "");
         setCustomerContactNo(data.customerContactNo || "");
         setpaidAmount(data.paidAmount || 0);
+        setInvoiceNo(data.invoiceNo || 0);
         setchangeAmount(data.changeAmount || 0);
 
         // Handling product items if present
@@ -240,6 +244,133 @@ const Newsale = () => {
     setpaidAmount(false);
   };
 
+  const handlePrintInvoice = (invoice) => {
+    if (!invoice) {
+      console.error("No invoice data available for printing!");
+      return;
+    }
+
+    const items = Array.isArray(invoice.items) ? invoice.items : [];
+
+    const formatDate = (date) => {
+      const d = date ? new Date(date) : new Date();
+
+      if (isNaN(d.getTime())) return "Invalid Date";
+
+      return `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${d.getFullYear()}`;
+    };
+
+    const formatTime = () => {
+      const d = new Date();
+      let hours = d.getHours();
+      const minutes = d.getMinutes().toString().padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12 || 12;
+      return `${hours}:${minutes} ${ampm}`;
+    };
+
+    const printContent = `
+      <div style="width: 300px; font-family: 'Courier New', Courier, monospace; font-size: 12px; margin: auto; padding: 10px; border: 1px solid #000;">
+        <div style="text-align: center; margin-bottom: 10px;">
+          <img src="${logo}" alt="Company Logo" style="width: 80px; height: auto;" />
+        </div>
+    
+        <h3 style="text-align: center; margin: 0; font-size: 16px; text-transform: uppercase;">Testing</h3>
+        <p style="text-align: center; margin: 5px 0; font-size: 12px;">Testing Work</p>
+        <p style="text-align: center; margin: 0; font-size: 10px;">Phone: +92 333 3395115</p>
+        <p style="text-align: center; margin: 5px 0; font-size: 12px;">Email: mafnankhadim74@gmail.com</p>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <p style="margin: 0; font-size: 12px;"><strong>Customer Name:</strong> ${
+          invoice.customerName
+        }</p>
+        <p style="margin: 0; font-size: 12px;"><strong>Contact:</strong> ${
+          invoice.customerContactNo
+        }</p>
+       <p style="margin: 0; font-size: 12px;">
+          <strong>Date:</strong> ${formatDate(invoice?.createdAt)}
+      </p>
+
+        <p style="margin: 0; font-size: 12px;"><strong>Time:</strong> ${formatTime()}</p>
+       <p style="margin: 0; font-size: 12px;"><strong>Invoice No:</strong> ${
+         invoice?.invoiceNo ?? "N/A"
+       }</p>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="text-align: left;">Item</th>
+              <th style="text-align: center;">Qty</th>
+              <th style="text-align: right;">Price</th>
+              <th style="text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              items.length > 0
+                ? items
+                    .map(
+                      (item) => `
+                  <tr>
+                    <td style="text-align: left;">${item.ProductName}</td>
+                    <td style="text-align: center;">${item.Quantity}</td>
+                    <td style="text-align: right;">${item.RetailPrice}</td>
+                    <td style="text-align: right;">${(
+                      item.RetailPrice * item.Quantity
+                    ).toFixed(2)}</td>
+                  </tr>`
+                    )
+                    .join("")
+                : `<tr><td colspan="4" style="text-align: center;">No items</td></tr>`
+            }
+          </tbody>
+        </table>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Total:</strong> Rs. ${
+          invoice.totalAmount
+        }</p>
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Service Charges:</strong> Rs. ${
+          invoice.serviceCharges || "0.00"
+        }</p>
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Grand Total:</strong> Rs. ${
+          invoice.netTotal || invoice.totalAmount
+        }</p>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Customer Paid:</strong> Rs. ${
+          invoice.paidAmount || "0.00"
+        }</p>
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Change Amount:</strong> Rs. ${
+          invoice.changeAmount || "0.00"
+        }</p>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <p style="text-align: center; margin: 0; font-size: 12px;">Thank you for your visit!</p>
+        <p style="text-align: center; margin: 0; font-size: 10px;">This is a computer-generated invoice.</p>
+      </div>
+    `;
+
+    const printWindow = window.open("", "_blank", "height=600,width=400");
+    if (!printWindow) {
+      console.error("Popup blocked! Please allow popups for this site.");
+      return;
+    }
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+
+    setTimeout(() => {
+      const printResult = printWindow.print();
+      if (printResult !== false) {
+        printWindow.close();
+      }
+    }, 500);
+  };
+
   // Add invoice API call
   const handleAddInvoice = async () => {
     if (!cart.length) {
@@ -295,6 +426,7 @@ const Newsale = () => {
       totalAmount: getTotalPrice().toFixed(2),
       paidAmount: paidAmount || 0,
       changeAmount: changeAmount || 0,
+      invoiceNo: invoiceNo || 0,
       totalProfit,
       items: updatedItems,
     };
@@ -315,12 +447,36 @@ const Newsale = () => {
 
       if (response.ok) {
         console.log("Invoice added successfully:", data);
+
+        // Check the full API response
+        console.log("Full API Response:", data);
+
+        // Ensure we correctly extract the invoice number
+        const updatedInvoiceData = {
+          ...invoiceData,
+          invoiceNo:
+            data.invoiceNo ||
+            data.invoice_no ||
+            data?.invoice?.invoiceNo ||
+            "Error: No Invoice Number",
+        };
+
+        console.log(
+          "Updated Invoice Data before printing:",
+          updatedInvoiceData
+        );
+
         setIsModalOpen(false);
+        setCustomerName("");
+        setCustomerContactNo("");
         setCart([]);
         alert("Invoice added successfully!");
+
+        // Pass the updated data to the print function
+        handlePrintInvoice(updatedInvoiceData);
       } else {
         console.error("Error adding invoice:", data);
-        alert(data.message || "Error adding invoice!"); // Show server message
+        alert(data.message || "Error adding invoice!");
       }
     } catch (error) {
       console.error("Error adding invoice:", error);
@@ -383,6 +539,7 @@ const Newsale = () => {
       totalAmount: getTotalPrice().toFixed(2),
       paidAmount: paidAmount || 0,
       changeAmount: changeAmount || 0,
+      invoiceNo: invoiceNo || 0,
       totalProfit,
       items: updatedItems,
     };
@@ -404,12 +561,16 @@ const Newsale = () => {
       if (response.ok) {
         console.log("Invoice updated successfully:", data);
         setIsModalOpen(false);
+
         alert("Invoice updated successfully!");
+
+        handlePrintInvoice(updatedInvoiceData);
 
         setCustomerName("");
         setCustomerContactNo("");
         setpaidAmount(0);
         setchangeAmount(0);
+        setInvoiceNo("");
         setCart([]);
 
         navigate("/sales/new-sale");
@@ -714,7 +875,7 @@ const Newsale = () => {
                   <button
                     id="updateInvoiceButton"
                     className="modal-submit-btn update-btn"
-                    onClick={handleUpdateInvoice}
+                    onClick={() => handleUpdateInvoice(customerDetails)}
                     disabled={
                       paidAmount <= getTotalPrice() || isNaN(paidAmount)
                     }
@@ -729,7 +890,7 @@ const Newsale = () => {
                         ? "enabled-btn"
                         : "disabled-btn"
                     }`}
-                    onClick={handleAddInvoice}
+                    onClick={() => handleAddInvoice(customerDetails)}
                     disabled={
                       paidAmount < getTotalPrice() ||
                       isNaN(paidAmount) ||

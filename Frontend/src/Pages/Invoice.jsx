@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import "../Styles/Invoice.css";
 import { FaEye, FaEdit, FaTrash, FaPrint } from "react-icons/fa";
+import logo from "../assets/images/black-pos-logo.png";
 
 const Invoice = () => {
   const [searchText, setSearchText] = useState("");
@@ -73,6 +74,146 @@ const Invoice = () => {
     return String(text).replace(regex, `<span class="highlight">$1</span>`);
   };
 
+  const handlePrint = async (invoiceId) => {
+    try {
+      if (!invoiceId || typeof invoiceId !== "string") {
+        console.error("Invoice ID is missing or invalid:", invoiceId);
+        return;
+      }
+
+      console.log("Invoice ID received:", invoiceId);
+
+      const response = await fetch(
+        `http://localhost:5000/api/invoice/getinvoice/${invoiceId}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch invoice");
+
+      const invoice = await response.json();
+      console.log("Invoice fetched successfully", invoice);
+
+      const items = Array.isArray(invoice.items) ? invoice.items : [];
+
+      const formatDate = (date) => {
+        const d = new Date(date);
+        return `${d.getDate().toString().padStart(2, "0")}-${(d.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${d.getFullYear()}`;
+      };
+
+      const formatTime = () => {
+        const d = new Date();
+        let hours = d.getHours();
+        const minutes = d.getMinutes().toString().padStart(2, "0");
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12;
+        return `${hours}:${minutes} ${ampm}`;
+      };
+
+      const printContent = `
+      <div style="width: 300px; font-family: 'Courier New', Courier, monospace; font-size: 12px; margin: auto; padding: 10px; border: 1px solid #000;">
+        <div style="text-align: center; margin-bottom: 10px;">
+          <img src="${logo}" alt="Company Logo" style="width: 80px; height: auto;" />
+        </div>
+    
+        <h3 style="text-align: center; margin: 0; font-size: 16px; text-transform: uppercase;">Testing</h3>
+        <p style="text-align: center; margin: 5px 0; font-size: 12px;">Testing Work</p>
+        <p style="text-align: center; margin: 0; font-size: 10px;">Phone: +92 333 3395115</p>
+        <p style="text-align: center; margin: 5px 0; font-size: 12px;">Email: mafnankhadim74@gmail.com</p>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <p style="margin: 0; font-size: 12px;"><strong>ID:</strong> ${
+          invoice._id
+        }</p>
+        <p style="margin: 0; font-size: 12px;"><strong>Customer Name:</strong> ${
+          invoice.customerName
+        }</p>
+        <p style="margin: 0; font-size: 12px;"><strong>Contact:</strong> ${
+          invoice.customerContactNo
+        }</p>
+        <p style="margin: 0; font-size: 12px;"><strong>Date:</strong> ${formatDate(
+          invoice.createdAt
+        )}</p>
+        <p style="margin: 0; font-size: 12px;"><strong>Time:</strong> ${formatTime()}</p>
+        <p style="margin: 0; font-size: 12px;"><strong>Invoice No:</strong> ${
+          invoice.invoiceNo
+        }</p>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="text-align: left;">Item</th>
+              <th style="text-align: center;">Qty</th>
+              <th style="text-align: right;">Price</th>
+              <th style="text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              items.length > 0
+                ? items
+                    .map(
+                      (item) => `
+              <tr>
+                <td style="text-align: left;">${item.ProductName}</td>
+                <td style="text-align: center;">${item.Quantity}</td>
+                <td style="text-align: right;">${item.RetailPrice}</td>
+                <td style="text-align: right;">${(
+                  item.RetailPrice * item.Quantity
+                ).toFixed(2)}</td>
+              </tr>`
+                    )
+                    .join("")
+                : `<tr><td colspan="4" style="text-align: center;">No items</td></tr>`
+            }
+          </tbody>
+        </table>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Total:</strong> Rs. ${
+          invoice.totalAmount
+        }</p>
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Service Charges:</strong> Rs. ${
+          invoice.serviceCharges || "0.00"
+        }</p>
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Grand Total:</strong> Rs. ${
+          invoice.netTotal || invoice.totalAmount
+        }</p>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Customer Paid:</strong> Rs. ${
+          invoice.paidAmount || "0.00"
+        }</p>
+        <p style="margin: 0; font-size: 12px; text-align: right;"><strong>Change Amount:</strong> Rs. ${
+          invoice.changeAmount || "0.00"
+        }</p>
+    
+        <hr style="border: 1px dashed #000; margin: 10px 0;">
+        <p style="text-align: center; margin: 0; font-size: 12px;">Thank you for your visit!</p>
+        <p style="text-align: center; margin: 0; font-size: 10px;">This is a computer-generated invoice.</p>
+      </div>
+    `;
+
+      const printWindow = window.open("", "_blank", "height=600,width=400");
+      if (!printWindow) {
+        console.error("Popup blocked! Please allow popups for this site.");
+        return;
+      }
+
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+
+      setTimeout(() => {
+        const printResult = printWindow.print();
+        if (printResult !== false) {
+          printWindow.close();
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Error fetching or printing the invoice:", error);
+    }
+  };
+
   const columns = [
     {
       name: "Invoice No",
@@ -131,7 +272,7 @@ const Invoice = () => {
           <button className="edit-btn" onClick={() => handleEditClick(row._id)}>
             <FaEdit />
           </button>
-          <button className="print-btn">
+          <button className="print-btn" onClick={() => handlePrint(row._id)}>
             <FaPrint />
           </button>
           <button className="delete-btn" onClick={() => handleDelete(row._id)}>

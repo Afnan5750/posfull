@@ -22,7 +22,9 @@ import Login from "./components/Login/Login";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Hint from "./components/Hint/Hint";
 import Calculator from "./components/Calculator/Calculator";
+import { Tooltip } from "react-tooltip";
 import "./App.css";
+import Detail from "./components/DetailPage/Detail";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -33,8 +35,12 @@ const Layout = ({ children }) => {
       {!isLoginPage && <Sidebar />}
       <div className="content">{children}</div>
 
-      <div className="hint-icon-container" title="Ctrl + Shift + H">
+      <div className="hint-icon-container" data-tooltip-id="hintTooltip">
         <FaInfoCircle className="hint-icon" />
+        <Tooltip id="hintTooltip" place="top" effect="solid">
+          Press <span style={{ fontWeight: "bold" }}> Ctrl + Shift + H</span>{" "}
+          for Keyboard Shortcuts
+        </Tooltip>
       </div>
     </div>
   );
@@ -113,6 +119,7 @@ const App = () => {
         {/* public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Login />} />
+        <Route path="/detail" element={<Detail />} />
 
         {/* private routes */}
         <Route

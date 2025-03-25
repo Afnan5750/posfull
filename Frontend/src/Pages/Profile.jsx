@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "../Styles/Profile.css";
-import profileImage from "../assets/images/black-pos-logo.png";
+import defaultLogo from "../assets/images/black-pos-logo.png";
+import { FaCamera } from "react-icons/fa";
 import axios from "axios";
 
 const Profile = () => {
@@ -11,9 +12,14 @@ const Profile = () => {
     confirmPassword: "",
   });
 
+  const [storeName, setStoreName] = useState("Profile");
+  const [editedStoreName, setEditedStoreName] = useState(storeName);
+  const [logo, setLogo] = useState(defaultLogo);
   const [editing, setEditing] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isPasswordEditing, setIsPasswordEditing] = useState(false);
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -43,39 +49,136 @@ const Profile = () => {
     fetchUserDetails();
   }, []);
 
-  const handleChange = (e) => {
-    setUserDetails({ ...userDetails, [e.target.name]: e.target.value });
+  useEffect(() => {
+    const fetchStoreDetails = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/detail/getDetail"
+        );
+
+        if (response.data.length > 0) {
+          const { storeName, logo } = response.data[0];
+
+          if (storeName) {
+            setStoreName(storeName);
+            setEditedStoreName(storeName); // Sync edited store name with actual store name
+          }
+
+          if (logo) setLogo(`http://localhost:5000${logo}`);
+          else console.warn("Logo not found in API response.");
+        }
+      } catch (error) {
+        console.error("Error fetching store details:", error);
+        setLogo(defaultLogo);
+      }
+    };
+
+    fetchStoreDetails();
+  }, []);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      setLogo(URL.createObjectURL(file)); // Show preview
+    }
   };
 
-  const handleSave = async () => {
-    if (
-      !userDetails.oldPassword ||
-      !userDetails.newPassword ||
-      !userDetails.confirmPassword
-    ) {
-      setError("All password fields are required.");
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "storeName") {
+      setEditedStoreName(value); // Update the input field value
+    } else {
+      setUserDetails({ ...userDetails, [name]: value });
+    }
+  };
+
+  const handleSaveStoreName = async () => {
+    setError("");
+    setSuccess("");
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Authentication error. Please log in again.");
       clearMessages();
       return;
     }
 
-    if (userDetails.newPassword !== userDetails.confirmPassword) {
-      setError("New password and confirm password do not match.");
+    // Ensure that oldPassword is provided
+    if (!userDetails.oldPassword) {
+      setError("Current password is required to update the store details.");
       clearMessages();
       return;
     }
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Authentication error. Please log in again.");
-        clearMessages();
-        return;
+      const formData = new FormData();
+      formData.append("storeName", editedStoreName);
+      formData.append("oldPassword", userDetails.oldPassword);
+
+      // Append image if a new one is selected
+      if (selectedImage) {
+        formData.append("logo", selectedImage);
       }
 
+      // Send request with FormData
+      const storeResponse = await axios.put(
+        "http://localhost:5000/api/detail/updateDetail",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (storeResponse.data.message === "Store details updated successfully") {
+        setSuccess("Store details updated successfully.");
+        setStoreName(editedStoreName); // Update the heading value
+
+        // If an image was updated, refresh the preview
+        if (selectedImage) {
+          setLogo(URL.createObjectURL(selectedImage));
+        }
+      }
+
+      // Clear only the oldPassword field after successful update
+      setUserDetails((prevDetails) => ({
+        ...prevDetails,
+        oldPassword: "",
+      }));
+
+      setEditing(false);
+      clearMessages();
+    } catch (error) {
+      setError(error.response?.data?.message || "Error updating details.");
+      clearMessages();
+    }
+  };
+
+  const handleSavePassword = async () => {
+    setError("");
+    setSuccess("");
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Authentication error. Please log in again.");
+      clearMessages();
+      return;
+    }
+
+    // Ensure the new password and confirm password match
+    if (userDetails.newPassword !== userDetails.confirmPassword) {
+      setError("New password and confirmation password must match.");
+      clearMessages();
+      return;
+    }
+
+    try {
       const response = await axios.put(
         "http://localhost:5000/api/auth/updateuser",
         {
-          username: userDetails.username,
           oldPassword: userDetails.oldPassword,
           password: userDetails.newPassword,
         },
@@ -83,23 +186,36 @@ const Profile = () => {
       );
 
       if (response.data.message === "User updated successfully") {
-        setError("");
         setSuccess("Password updated successfully.");
-        setEditing(false);
-        setUserDetails({
-          ...userDetails,
-          oldPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-
-        clearMessages(); // ✅ Remove success message after 5s
       }
+
+      // Clear password fields after successful update
+      setUserDetails({
+        ...userDetails,
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+      setIsPasswordEditing(false);
+      clearMessages();
     } catch (error) {
-      setSuccess("");
       setError(error.response?.data?.message || "Error updating password.");
-      clearMessages(); // ✅ Remove error message after 5s
+      clearMessages();
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditing(false);
+    setIsPasswordEditing(false);
+
+    // Clear password fields when editing is canceled
+    setUserDetails({
+      ...userDetails,
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
   };
 
   // Function to clear messages after 5 seconds
@@ -110,34 +226,35 @@ const Profile = () => {
     }, 5000);
   };
 
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.ctrlKey) {
-        e.preventDefault(); // Prevent default browser behavior
-
-        if (e.key.toLowerCase() === "e") {
-          setEditing((prevEditing) => !prevEditing); // Toggle edit mode
-        } else if (e.key.toLowerCase() === "s" && editing) {
-          handleSave(); // Trigger Save when editing
-        } else if (e.key.toLowerCase() === "c" && editing) {
-          setEditing(false); // Cancel editing
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-    return () => {
-      window.removeEventListener("keydown", handleKeyPress);
-    };
-  }, [editing, handleSave]);
-
   return (
     <div className="profile-container">
-      <h2 className="profile-heading">Profile</h2>
-
       <div className="profile-image-wrapper">
-        <img src={profileImage} alt="Profile" className="profile-image" />
+        <img
+          src={logo}
+          alt="Logo"
+          className="profile-image"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = defaultLogo;
+          }}
+        />
+        {editing && (
+          <>
+            <label htmlFor="fileUpload" className="change-image-icon">
+              <FaCamera size={20} />
+            </label>
+            <input
+              type="file"
+              id="fileUpload"
+              accept="image/*"
+              className="file-input"
+              onChange={handleImageChange}
+            />
+          </>
+        )}
       </div>
+
+      <h2 className="profile-heading">{storeName}</h2>
 
       <div className="profile-info-container">
         <div className="profile-input-group">
@@ -151,37 +268,110 @@ const Profile = () => {
           />
         </div>
 
-        {editing &&
-          ["oldPassword", "newPassword", "confirmPassword"].map((field) => (
-            <div key={field} className="profile-input-group">
-              <label className="profile-label">
-                {field.replace(/([A-Z])/g, " $1").trim()}
-              </label>
+        {editing && (
+          <>
+            <div className="profile-input-group">
+              <label className="profile-label">Store Name</label>
               <input
-                type="password"
-                name={field}
-                value={userDetails[field]}
+                type="text"
+                name="storeName"
+                value={editedStoreName} // Use editedStoreName here instead of storeName
                 className="profile-input"
                 onChange={handleChange}
               />
             </div>
-          ))}
+
+            <div className="profile-input-group">
+              <label className="profile-label">Current Password</label>
+              <input
+                type="password"
+                name="oldPassword"
+                value={userDetails.oldPassword}
+                className="profile-input"
+                onChange={handleChange}
+                placeholder="Enter your current password"
+              />
+            </div>
+          </>
+        )}
+
+        {isPasswordEditing && (
+          <>
+            <div className="profile-input-group">
+              <label className="profile-label">Old Password</label>
+              <input
+                type="password"
+                name="oldPassword"
+                value={userDetails.oldPassword}
+                className="profile-input"
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="profile-input-group">
+              <label className="profile-label">New Password</label>
+              <input
+                type="password"
+                name="newPassword"
+                value={userDetails.newPassword}
+                className="profile-input"
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="profile-input-group">
+              <label className="profile-label">Confirm New Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={userDetails.confirmPassword}
+                className="profile-input"
+                onChange={handleChange}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {error && <p className="error-message">{error}</p>}
       {success && <p className="success-message">{success}</p>}
 
       <div className="profile-actions">
-        <button
-          className="profile-edit-btn"
-          onClick={() => setEditing(!editing)}
-        >
-          {editing ? "Cancel" : "Edit"}
-        </button>
-        {editing && (
-          <button className="save-btn" onClick={handleSave}>
-            Save
+        {!isPasswordEditing && !editing && (
+          <button className="profile-edit-btn" onClick={() => setEditing(true)}>
+            Edit Profile
           </button>
+        )}
+
+        {!editing && !isPasswordEditing && (
+          <button
+            className="profile-edit-btn"
+            onClick={() => setIsPasswordEditing(true)}
+          >
+            Change Password
+          </button>
+        )}
+
+        {editing && !isPasswordEditing && (
+          <>
+            <button className="save-btn" onClick={handleSaveStoreName}>
+              Update Store Name
+            </button>
+            <button className="cancel-btn" onClick={handleCancelEdit}>
+              Cancel
+            </button>
+          </>
+        )}
+
+        {isPasswordEditing && (
+          <>
+            <button className="save-btn" onClick={handleSavePassword}>
+              Update Password
+            </button>
+            <button className="cancel-btn" onClick={handleCancelEdit}>
+              Cancel
+            </button>
+          </>
         )}
       </div>
     </div>

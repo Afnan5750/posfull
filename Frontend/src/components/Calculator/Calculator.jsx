@@ -41,7 +41,7 @@ const Calculator = () => {
   const handleButtonClick = (value) => {
     if (value === "=" || value === "Enter") {
       try {
-        setResult(eval(input).toString()); // Evaluate the expression
+        setResult(eval(input).toString());
       } catch {
         setResult("Error");
       }

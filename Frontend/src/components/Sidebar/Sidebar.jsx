@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   FaTachometerAlt,
   FaShoppingCart,
@@ -19,12 +20,32 @@ import {
   FaExclamationCircle,
 } from "react-icons/fa";
 import "./Sidebar.css";
-import logo from "../../assets/images/pos-logo.png";
+import defaultLogo from "../../assets/images/pos-logo.png";
 
 const Sidebar = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const [logo, setLogo] = useState(defaultLogo);
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/detail/getDetail"
+        );
+
+        if (response.data.length > 0 && response.data[0].logo) {
+          setLogo(`http://localhost:5000${response.data[0].logo}`); // Fix
+        }
+      } catch (error) {
+        console.error("Error fetching logo:", error);
+        setLogo(defaultLogo); // Set a fallback image
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   useEffect(() => {
     // Determine active dropdown based on current URL
@@ -58,7 +79,15 @@ const Sidebar = () => {
     <div className="sidebar">
       <div className="sidebar-header">
         <Link to="/dashboard">
-          <img src={logo} alt="POS System Logo" className="sidebar-logo" />
+          <img
+            src={logo}
+            alt="POS Logo"
+            className="sidebar-logo"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = defaultLogo;
+            }}
+          />
         </Link>
       </div>
 
