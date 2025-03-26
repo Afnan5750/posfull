@@ -684,7 +684,9 @@ const Newsale = () => {
 
       <div className="search-cart-container">
         <div className="input-group-container" ref={dropdownRef}>
-          <label className="input-label-text">Search Product</label>
+          <label className="input-label-text">
+            Search Product<span className="shortcut-box">Shift + S</span>
+          </label>
           <input
             type="text"
             className="input-field-box"
@@ -764,6 +766,7 @@ const Newsale = () => {
                         handleQuantityChange(item.id, parseInt(e.target.value))
                       }
                     />
+                    <span className="shortcut-box">Shift + Q</span>
                   </td>
                   <td>
                     <button
@@ -787,14 +790,14 @@ const Newsale = () => {
                 className="modal-submit-btn update-btn"
                 onClick={() => setIsModalOpen(true)}
               >
-                Update
+                Update<span className="shortcut">P</span>
               </button>
             ) : (
               <button
                 className="modal-submit-btn pay-btn"
                 onClick={() => setIsModalOpen(true)}
               >
-                Pay
+                Pay <span className="shortcut">P</span>
               </button>
             )}
           </>

@@ -11,7 +11,7 @@ const productSchema = new mongoose.Schema(
     ProImage: { type: String, required: true },
     Unit: { type: String, required: true },
     Quantity: { type: Number, required: true, default: 0 },
-    ExpiryDate: { type: Date, required: true },
+    ExpiryDate: { type: Date },
   },
   { timestamps: true }
 );

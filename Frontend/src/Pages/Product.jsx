@@ -734,7 +734,6 @@ const Product = () => {
                 <input
                   type="date"
                   className="modal-input"
-                  required
                   value={expirydate}
                   onChange={(e) => setExpirydate(e.target.value)}
                 />

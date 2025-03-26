@@ -39,7 +39,15 @@ const Calculator = () => {
   }, [show, input]);
 
   const handleButtonClick = (value) => {
-    if (value === "=" || value === "Enter") {
+    if (result !== "" && /[\d]/.test(value)) {
+      // If a result is displayed and a number is pressed, start a new calculation
+      setInput(value);
+      setResult("");
+    } else if (result !== "" && /[+\-*/]/.test(value)) {
+      // If a result is displayed and an operator is pressed, use the result for further calculation
+      setInput(result + value);
+      setResult(""); // Clear result but keep it in input
+    } else if (value === "=" || value === "Enter") {
       try {
         setResult(eval(input).toString());
       } catch {
@@ -65,13 +73,16 @@ const Calculator = () => {
 
             {/* Display Area */}
             <div className="calculator-display">
-              <input
-                type="text"
-                value={input}
-                readOnly
-                className="calculator-input"
-              />
-              <div className="calculator-result">= {result}</div>
+              {result !== "" ? (
+                <div className="calculator-result">{result}</div>
+              ) : (
+                <input
+                  type="text"
+                  value={input}
+                  readOnly
+                  className="calculator-input"
+                />
+              )}
             </div>
 
             {/* Calculator Buttons */}

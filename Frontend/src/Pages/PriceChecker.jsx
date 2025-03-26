@@ -59,7 +59,15 @@ const PriceChecker = () => {
     }
   };
 
-  // Handle product search
+  const handleSelectProduct = (product) => {
+    setSelectedProduct(product);
+    setSearch(product.name);
+    setFilteredProducts([]);
+
+    // Clear the search input after a short delay (optional)
+    setTimeout(() => setSearch(""), 300);
+  };
+
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearch(query);
@@ -98,13 +106,6 @@ const PriceChecker = () => {
     }
   };
 
-  // Handle product selection from dropdown
-  const handleSelectProduct = (product) => {
-    setSelectedProduct(product);
-    setSearch(product.name);
-    setFilteredProducts([]);
-  };
-
   const handleKeyPress = (e) => {
     if (e.shiftKey && e.key.toLowerCase() === "s") {
       e.preventDefault();
@@ -138,7 +139,9 @@ const PriceChecker = () => {
 
       {/* Product Name Search */}
       <div className="input-group-container">
-        <label className="input-label-text">Search by Product Name</label>
+        <label className="input-label-text">
+          Search by Name<span className="shortcut-box">Shift + S</span>
+        </label>
         <input
           type="text"
           className="input-field-box"
