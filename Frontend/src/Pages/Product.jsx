@@ -188,23 +188,11 @@ const Product = () => {
       if (response.ok) {
         alert("Product added successfully!");
 
-        // 🔄 Fetch updated product list
+        // 🔄 Fetch updated product list directly after adding a product
         const updatedResponse = await axios.get(
           "http://localhost:5000/api/product/getproducts"
         );
         setData(updatedResponse.data.products);
-
-        // ✅ Clear input fields
-        setBarcode("");
-        setProductName("");
-        setCategory("");
-        setCompany("");
-        setRetailPrice("");
-        setCostPrice("");
-        setUnit("");
-        setQuantity("");
-        setExpirydate("");
-        setProductImage(null); // Reset file input
 
         closeAddProductModal(); // Close modal after success
       } else {
