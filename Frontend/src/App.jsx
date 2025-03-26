@@ -38,8 +38,14 @@ const Layout = ({ children }) => {
       <div className="hint-icon-container" data-tooltip-id="hintTooltip">
         <FaInfoCircle className="hint-icon" />
         <Tooltip id="hintTooltip" place="top" effect="solid">
-          Press <span style={{ fontWeight: "bold" }}> Ctrl + Shift + H</span>{" "}
-          for Keyboard Shortcuts
+          <div>
+            Press <span style={{ fontWeight: "bold" }}>Ctrl + Shift + H</span>{" "}
+            for Keyboard Shortcuts
+          </div>
+          <div>
+            Press <span style={{ fontWeight: "bold" }}>Alt + C</span> to Open
+            Calculator
+          </div>
         </Tooltip>
       </div>
     </div>

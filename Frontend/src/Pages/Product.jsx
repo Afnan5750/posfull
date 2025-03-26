@@ -43,6 +43,7 @@ const Product = () => {
   const unitOptions = ["KG", "Litre", "Piece", "Box", "Packet"];
   const [activeIndex, setActiveIndex] = useState(-1);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(-1);
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   const openAddProductModal = () => setIsAddProductModalOpen(true);
   const closeAddProductModal = () => setIsAddProductModalOpen(false);
@@ -187,11 +188,23 @@ const Product = () => {
       if (response.ok) {
         alert("Product added successfully!");
 
-        // 🔄 Fetch updated product list directly after adding a product
+        // 🔄 Fetch updated product list
         const updatedResponse = await axios.get(
           "http://localhost:5000/api/product/getproducts"
         );
         setData(updatedResponse.data.products);
+
+        // ✅ Clear input fields
+        setBarcode("");
+        setProductName("");
+        setCategory("");
+        setCompany("");
+        setRetailPrice("");
+        setCostPrice("");
+        setUnit("");
+        setQuantity("");
+        setExpirydate("");
+        setProductImage(null); // Reset file input
 
         closeAddProductModal(); // Close modal after success
       } else {
@@ -388,11 +401,12 @@ const Product = () => {
   // Filter data based on search input
   const filteredData = data.filter(
     (item) =>
-      item.ProductName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.Probarcode?.toString()
-        .toLowerCase()
-        .includes(searchText.toLowerCase()) ||
-      item.Category?.toLowerCase().includes(searchText.toLowerCase())
+      (selectedCategory === "" || item.Category === selectedCategory) && // Filter by selected category
+      (item.ProductName?.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.Probarcode?.toString()
+          .toLowerCase()
+          .includes(searchText.toLowerCase()) ||
+        item.Category?.toLowerCase().includes(searchText.toLowerCase()))
   );
 
   // Keyboard Shortcuts
@@ -422,10 +436,27 @@ const Product = () => {
       <h2 className="table-title">Product Table</h2>
 
       <div className="table-controls">
-        <button className="add-button" onClick={openAddProductModal}>
-          Add Product
-        </button>
+        <div className="button-dropdown-container">
+          {/* Add Product Button */}
+          <button className="add-button" onClick={openAddProductModal}>
+            Add Product
+          </button>
 
+          <select
+            className="filter-dropdown"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="">Select Category</option>
+            {categories.map((category) => (
+              <option key={category._id} value={category.categoryName}>
+                {category.categoryName}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Search Box */}
         <input
           type="text"
           placeholder="Search product..."
@@ -435,6 +466,7 @@ const Product = () => {
         />
       </div>
 
+      {/* Data Table */}
       <DataTable
         columns={columns}
         data={filteredData}

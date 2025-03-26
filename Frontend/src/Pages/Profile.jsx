@@ -220,6 +220,45 @@ const Profile = () => {
     });
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey && event.key.toLowerCase() === "e") {
+        event.preventDefault(); // Toggle edit mode
+        setEditing((prevEditing) => !prevEditing);
+      }
+
+      if (event.altKey && event.key.toLowerCase() === "e") {
+        event.preventDefault(); // Open Change Password
+        setIsPasswordEditing(true);
+      }
+
+      if (event.ctrlKey && event.key.toLowerCase() === "c") {
+        event.preventDefault(); // Cancel editing
+        handleCancelEdit();
+      }
+
+      if (event.ctrlKey && event.key.toLowerCase() === "s") {
+        event.preventDefault(); // Save changes based on mode
+        if (editing) {
+          handleSaveStoreName(); // Save store details
+        } else if (isPasswordEditing) {
+          handleSavePassword(); // Update password
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    handleCancelEdit,
+    editing,
+    isPasswordEditing,
+    handleSaveStoreName,
+    handleSavePassword,
+  ]); // Correct dependencies
+
   // Function to clear messages after 5 seconds
   const clearMessages = () => {
     setTimeout(() => {
@@ -341,7 +380,7 @@ const Profile = () => {
       <div className="profile-actions">
         {!isPasswordEditing && !editing && (
           <button className="profile-edit-btn" onClick={() => setEditing(true)}>
-            Edit Profile
+            Edit Profile <span className="shortcut">Ctrl + E</span>
           </button>
         )}
 
@@ -350,17 +389,17 @@ const Profile = () => {
             className="profile-edit-btn"
             onClick={() => setIsPasswordEditing(true)}
           >
-            Change Password
+            Change Password <span className="shortcut">Alt + E</span>
           </button>
         )}
 
         {editing && !isPasswordEditing && (
           <>
             <button className="save-btn" onClick={handleSaveStoreName}>
-              Update Store Name
+              Update Store Name <span className="shortcut">Ctrl + S</span>
             </button>
             <button className="cancel-btn" onClick={handleCancelEdit}>
-              Cancel
+              Cancel <span className="shortcut">Ctrl + C</span>
             </button>
           </>
         )}
@@ -368,10 +407,10 @@ const Profile = () => {
         {isPasswordEditing && (
           <>
             <button className="save-btn" onClick={handleSavePassword}>
-              Update Password
+              Update Password <span className="shortcut">Ctrl + S</span>
             </button>
             <button className="cancel-btn" onClick={handleCancelEdit}>
-              Cancel
+              Cancel <span className="shortcut">Ctrl + C</span>
             </button>
           </>
         )}

@@ -54,9 +54,10 @@ const Hint = () => {
     ],
     Profile: [
       { keys: "Ctrl + Shift + P", description: "Go to Profile Page" },
-      { keys: "Ctrl + E", description: "Edit Profile" },
-      { keys: "Ctrl + S", description: "Save Profile" },
-      { keys: "Ctrl + C", description: "Cancel Save Profile" },
+      { keys: "Ctrl + E", description: "Edit Store Details" },
+      { keys: "Alt + E", description: "Change Password" },
+      { keys: "Ctrl + S", description: "Save" },
+      { keys: "Ctrl + C", description: "Cancel" },
     ],
   };
 
