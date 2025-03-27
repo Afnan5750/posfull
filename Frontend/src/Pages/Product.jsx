@@ -40,7 +40,7 @@ const Product = () => {
   const [error, setError] = useState("");
   const [showUnitDropdown, setShowUnitDropdown] = useState(false); // Dropdown visibility state
   const [unitError, setUnitError] = useState(""); // Error state
-  const unitOptions = ["KG", "Litre", "Piece", "Box", "Packet"];
+  const unitOptions = ["Kg", "Litre", "Piece", "Box", "Packet"];
   const [activeIndex, setActiveIndex] = useState(-1);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(-1);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -508,7 +508,7 @@ const Product = () => {
                 ? new Date(selectedProduct.ExpiryDate).toLocaleDateString(
                     "en-GB"
                   )
-                : "N/A"}
+                : "Lifetime"}
             </p>
           </div>
         </div>
@@ -728,6 +728,84 @@ const Product = () => {
                 {/* Error Message */}
                 {error && <p className="error-message">{error}</p>}
               </div>
+              <div
+                className={`input-group ${
+                  category || showDropdown ? "focused" : ""
+                }`}
+              >
+                <input
+                  type="text"
+                  className="modal-input"
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setError(""); // Clear error when typing
+                    setActiveCategoryIndex(-1); // Reset active index on input change
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      setActiveCategoryIndex((prev) =>
+                        prev < filteredCategories.length - 1 ? prev + 1 : 0
+                      );
+                    } else if (e.key === "ArrowUp") {
+                      setActiveCategoryIndex((prev) =>
+                        prev > 0 ? prev - 1 : filteredCategories.length - 1
+                      );
+                    } else if (
+                      e.key === "Enter" &&
+                      activeCategoryIndex !== -1
+                    ) {
+                      setCategory(
+                        filteredCategories[activeCategoryIndex].categoryName
+                      );
+                      setError(""); // Clear error on valid selection
+                      setShowDropdown(false);
+                    }
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => {
+                    setTimeout(() => setShowDropdown(false), 200); // Delay to allow click selection
+                    // Validation: Check if entered category exists in dropdown
+                    const isCategoryValid = filteredCategories.some(
+                      (cat) =>
+                        cat.categoryName.toLowerCase() ===
+                        category.toLowerCase()
+                    );
+
+                    if (!isCategoryValid && category !== "") {
+                      setError(
+                        "Please select a valid category from the dropdown."
+                      );
+                    }
+                  }}
+                />
+                <label className="floating-label">Category</label>
+
+                {/* Dropdown List */}
+                {showDropdown && filteredCategories.length > 0 && (
+                  <ul className="dropdown-list">
+                    {filteredCategories.map((cat, index) => (
+                      <li
+                        key={cat._id}
+                        className={
+                          index === activeCategoryIndex ? "active" : ""
+                        }
+                        onMouseEnter={() => setActiveCategoryIndex(index)}
+                        onClick={() => {
+                          setCategory(cat.categoryName);
+                          setError(""); // Clear error on valid selection
+                          setShowDropdown(false);
+                        }}
+                      >
+                        {cat.categoryName}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Error Message */}
+                {error && <p className="error-message">{error}</p>}
+              </div>
 
               {/* Expiry Date */}
               <div className="input-group focused">
@@ -817,12 +895,6 @@ const Product = () => {
                   setState: setEditCostPrice,
                 },
                 {
-                  label: "Unit",
-                  type: "text",
-                  state: editUnit,
-                  setState: setEditUnit,
-                },
-                {
                   label: "Quantity",
                   type: "number",
                   state: editQuantity,
@@ -842,13 +914,78 @@ const Product = () => {
                   <input
                     type={field.type}
                     className="modal-input"
-                    required
                     value={field.state}
                     onChange={(e) => field.setState(e.target.value)}
                   />
                   <label className="floating-label">{field.label}</label>
                 </div>
               ))}
+
+              {/* Unit Searchable Dropdown */}
+              <div
+                className={`input-group ${
+                  editUnit || showUnitDropdown ? "focused" : ""
+                }`}
+              >
+                <input
+                  type="text"
+                  className="modal-input"
+                  value={editUnit}
+                  onChange={(e) => {
+                    setEditUnit(e.target.value);
+                    setUnitError("");
+                    setActiveIndex(-1);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      setActiveIndex((prev) =>
+                        prev < filteredUnits.length - 1 ? prev + 1 : 0
+                      );
+                    } else if (e.key === "ArrowUp") {
+                      setActiveIndex((prev) =>
+                        prev > 0 ? prev - 1 : filteredUnits.length - 1
+                      );
+                    } else if (e.key === "Enter" && activeIndex !== -1) {
+                      e.preventDefault(); // 🚀 Prevents form submission
+                      setEditUnit(filteredUnits[activeIndex]);
+                      setUnitError("");
+                      setShowUnitDropdown(false);
+                    }
+                  }}
+                  onFocus={() => setShowUnitDropdown(true)}
+                  onBlur={() => {
+                    setTimeout(() => setShowUnitDropdown(false), 200);
+                    if (!unitOptions.includes(editUnit) && editUnit !== "") {
+                      setUnitError(
+                        "Please select a valid unit from the dropdown."
+                      );
+                    }
+                  }}
+                />
+
+                <label className="floating-label">Unit</label>
+
+                {showUnitDropdown && filteredUnits.length > 0 && (
+                  <ul className="dropdown-list">
+                    {filteredUnits.map((u, index) => (
+                      <li
+                        key={index}
+                        className={index === activeIndex ? "active" : ""}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onClick={() => {
+                          setEditUnit(u);
+                          setUnitError("");
+                          setShowUnitDropdown(false);
+                        }}
+                      >
+                        {u}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {unitError && <p className="error-message">{unitError}</p>}
+              </div>
 
               {/* Category Input with Dropdown */}
               <div
@@ -863,7 +1000,30 @@ const Product = () => {
                   value={editCategory}
                   onChange={(e) => {
                     setEditCategory(e.target.value);
-                    setError(""); // Clear error when typing
+                    setError("");
+                    setActiveIndex(-1); // Reset index when typing
+                  }}
+                  onKeyDown={(e) => {
+                    if (filteredCategories.length > 0) {
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setActiveIndex((prev) =>
+                          prev < filteredCategories.length - 1 ? prev + 1 : 0
+                        );
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setActiveIndex((prev) =>
+                          prev > 0 ? prev - 1 : filteredCategories.length - 1
+                        );
+                      } else if (e.key === "Enter" && activeIndex !== -1) {
+                        e.preventDefault();
+                        setEditCategory(
+                          filteredCategories[activeIndex].categoryName
+                        );
+                        setError("");
+                        setShowDropdown(false);
+                      }
+                    }
                   }}
                   onFocus={() => setShowDropdown(true)}
                   onBlur={() => {
@@ -888,12 +1048,15 @@ const Product = () => {
                 {/* Dropdown List */}
                 {showDropdown && filteredCategories.length > 0 && (
                   <ul className="dropdown-list">
-                    {filteredCategories.map((cat) => (
+                    {filteredCategories.map((cat, index) => (
                       <li
                         key={cat._id}
+                        className={index === activeIndex ? "active" : ""} // Highlight active item
+                        onMouseEnter={() => setActiveIndex(index)}
                         onClick={() => {
                           setEditCategory(cat.categoryName);
-                          setError(""); // Clear error on valid selection
+                          setError("");
+                          setShowDropdown(false);
                         }}
                       >
                         {cat.categoryName}
@@ -901,7 +1064,6 @@ const Product = () => {
                     ))}
                   </ul>
                 )}
-
                 {/* Error Message */}
                 {error && <p className="error-message">{error}</p>}
               </div>

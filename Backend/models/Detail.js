@@ -9,6 +9,18 @@ const DetailSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  contactNo: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+  },
+  address: {
+    type: String,
+    required: true,
+  },
 });
 
 const Detail = mongoose.model("Detail", DetailSchema);

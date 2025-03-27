@@ -4,12 +4,12 @@ import "./Detail.css";
 
 const Detail = () => {
   const [storeName, setStoreName] = useState("");
+  const [email, setEmail] = useState("");
+  const [contactNo, setContactNo] = useState("");
+  const [address, setAddress] = useState(""); // New Address State
   const [logo, setLogo] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [message, setMessage] = useState("");
-  // const [warning] = useState(
-  //   "⚠️ Once saved, you cannot change the store name and logo."
-  // );
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -20,8 +20,8 @@ const Detail = () => {
   };
 
   const handleSave = async () => {
-    if (!storeName || !logo) {
-      setMessage("Please enter a store name and upload an image.");
+    if (!storeName || !email || !contactNo || !address || !logo) {
+      setMessage("Please fill in all fields and upload an image.");
       return;
     }
 
@@ -32,6 +32,9 @@ const Detail = () => {
 
     const formData = new FormData();
     formData.append("storeName", storeName);
+    formData.append("email", email);
+    formData.append("contactNo", contactNo);
+    formData.append("address", address); // Adding Address
     formData.append("logo", logo);
 
     try {
@@ -45,6 +48,9 @@ const Detail = () => {
 
       setMessage(response.data.message);
       setStoreName("");
+      setEmail("");
+      setContactNo("");
+      setAddress(""); // Reset Address
       setLogo(null);
       setImagePreview(null);
     } catch (error) {
@@ -54,9 +60,7 @@ const Detail = () => {
 
   return (
     <div className="detail-container">
-      <h2 className="detail-tagline">Set Your Store Name & Logo</h2>
-
-      {/* <p className="warning-message">{warning}</p> */}
+      <h2 className="detail-tagline">Set Your Store Details</h2>
 
       <div className="detail-input-group">
         <label className="detail-label" htmlFor="storeName">
@@ -69,6 +73,49 @@ const Detail = () => {
           placeholder="Enter store name"
           value={storeName}
           onChange={(e) => setStoreName(e.target.value)}
+        />
+      </div>
+
+      <div className="detail-input-group">
+        <label className="detail-label" htmlFor="email">
+          Email:
+        </label>
+        <input
+          type="email"
+          id="email"
+          className="detail-input"
+          placeholder="Enter store email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
+
+      <div className="detail-input-group">
+        <label className="detail-label" htmlFor="contactNo">
+          Contact Number:
+        </label>
+        <input
+          type="number"
+          id="contactNo"
+          className="detail-input"
+          placeholder="Enter contact number"
+          value={contactNo}
+          onChange={(e) => setContactNo(e.target.value)}
+        />
+      </div>
+
+      {/* New Address Input Field */}
+      <div className="detail-input-group">
+        <label className="detail-label" htmlFor="address">
+          Address:
+        </label>
+        <input
+          type="text"
+          id="address"
+          className="detail-input"
+          placeholder="Enter store address"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
         />
       </div>
 

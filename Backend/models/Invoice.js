@@ -22,6 +22,7 @@ const invoiceSchema = new mongoose.Schema(
     invoiceNo: { type: Number, unique: true },
     customerName: { type: String, required: true },
     customerContactNo: { type: Number, required: true },
+    billedBy: { type: String, required: true },
     items: [invoiceItemSchema],
     totalAmount: { type: Number, required: true },
     paidAmount: { type: Number, required: true },

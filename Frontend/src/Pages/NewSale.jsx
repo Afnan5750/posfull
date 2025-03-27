@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "../Styles/NewSale.css";
+import axios from "axios";
 import { FaTrash } from "react-icons/fa";
 import placeholderImage from "../assets/images/product-placeholder.jpg";
 import logo from "../assets/images/black-pos-logo.png";
@@ -26,9 +27,11 @@ const Newsale = () => {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [lastUsedInput, setLastUsedInput] = useState("barcode");
   const searchInputRef = useRef(null);
+  const searchBarCodeRef = useRef(null);
   const addToCartBtnRef = useRef(null);
   const quantityInputRef = useRef(null);
   const [customerDetails, setCustomerDetails] = useState({});
+  const [username, setUsername] = useState("");
 
   // for fetch invoice data in console
   const fetchInvoiceData = async (id) => {
@@ -62,6 +65,11 @@ const Newsale = () => {
     } catch (err) {
       console.error("Error fetching invoice:", err);
     }
+  };
+
+  const setRefs = (element) => {
+    barcodeInputRef.current = element;
+    searchBarCodeRef.current = element;
   };
 
   // Fetch invoice data on component mount when invoiceId is available
@@ -100,6 +108,26 @@ const Newsale = () => {
     if (barcodeInputRef.current) {
       barcodeInputRef.current.focus();
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/auth/getuser",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`, // Include token if needed
+            },
+          }
+        );
+        setUsername(response.data.username); // Assuming API returns { username: "JohnDoe" }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+
+    fetchUser();
   }, []);
 
   useEffect(() => {
@@ -429,6 +457,7 @@ const Newsale = () => {
       invoiceNo: invoiceNo || 0,
       totalProfit,
       items: updatedItems,
+      billedBy: username,
     };
 
     try {
@@ -620,6 +649,11 @@ const Newsale = () => {
       searchInputRef.current?.focus();
     }
 
+    if (e.shiftKey && e.key.toLowerCase() === "b") {
+      e.preventDefault();
+      searchBarCodeRef.current?.focus();
+    }
+
     if (e.key === "Escape" && isModalOpen) {
       e.preventDefault();
       closeModal();
@@ -657,6 +691,15 @@ const Newsale = () => {
               onChange={(e) => setCustomerName(e.target.value)}
             />
           </div>
+          <div className="billedBy">
+            <label className="input-label-text">Billed By</label>
+            <input
+              type="text"
+              className="input-field-box"
+              value={username}
+              readOnly
+            />
+          </div>
 
           <div className="input-group-container half-width-box">
             <label className="input-label-text">Contact Number</label>
@@ -671,14 +714,16 @@ const Newsale = () => {
         </div>
 
         {/* Barcode Input */}
-        <label className="input-label-text">Scan Barcode</label>
+        <label className="input-label-text">
+          Scan Barcode<span className="shortcut-box">Shift + B</span>
+        </label>
         <input
           type="number"
           className="input-field-box"
           placeholder="Scan or Enter Barcode"
           value={barcode}
           onChange={handleBarcodeSearch}
-          ref={barcodeInputRef}
+          ref={setRefs}
         />
       </div>
 

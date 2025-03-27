@@ -8,33 +8,44 @@ dotenv.config(); // Load environment variables
 
 const router = express.Router();
 
-// Authentication Middleware (Inline)
+// Authentication Middleware
 const authenticate = (req, res, next) => {
-  const token = req.header("Authorization")?.split(" ")[1];
+  const authHeader = req.header("Authorization");
 
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "No token, authorization denied" });
   }
+
+  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+
+    if (!req.user.id) {
+      return res.status(400).json({ message: "Invalid token payload" });
+    }
+
     next();
   } catch (error) {
-    res.status(401).json({ message: "Invalid token" });
+    return res
+      .status(401)
+      .json({ message: "Invalid token", error: error.message });
   }
 };
 
-// Get logged-in user details
+// Get Logged-in User Details
 router.get("/getuser", authenticate, async (req, res) => {
   try {
-    const user = await Login.findById(req.user.id).select("-password"); // Exclude password from response
+    const user = await Login.findById(req.user.id).select("-password");
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     res.json(user);
   } catch (error) {
+    console.error("Error fetching user:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });

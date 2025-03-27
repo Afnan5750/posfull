@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
 import "../Styles/InvoiceReport.css";
+import axios from "axios";
 import { FaEye, FaPrint, FaDownload } from "react-icons/fa";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -25,6 +26,7 @@ const InvoiceReport = () => {
   const [error, setError] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [storeDetails, setStoreDetails] = useState(null);
 
   useEffect(() => {
     const fetchInvoicesByDateRange = async () => {
@@ -50,6 +52,19 @@ const InvoiceReport = () => {
 
     fetchInvoicesByDateRange();
   }, [startDate, endDate]); // Trigger request when dates change
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/detail/getDetail")
+      .then((response) => {
+        if (response.data.length > 0) {
+          setStoreDetails(response.data[0]); // Assuming there's only one store detail
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching store details", error);
+      });
+  }, []);
 
   const highlightText = (text, searchText) => {
     if (!searchText || !text) return text;
@@ -260,9 +275,17 @@ const InvoiceReport = () => {
 
             {/* Invoice Header */}
             <div className="custom-invoice-header custom-text-center">
-              <h2>Company Name</h2>
-              <p>123 Main Street, City, Country</p>
-              <p>Email: info@company.com | Phone: (123) 456-7890</p>
+              <h2>{storeDetails ? storeDetails.storeName : "Company Name"}</h2>
+              <p>
+                {storeDetails
+                  ? storeDetails.address
+                  : "123 Main Street, City, Country"}
+              </p>
+              <p>
+                Email: {storeDetails ? storeDetails.email : "info@company.com"}{" "}
+                | Phone:{" "}
+                {storeDetails ? storeDetails.contactNo : "(123) 456-7890"}
+              </p>
             </div>
 
             <hr className="custom-divider" />
@@ -285,6 +308,11 @@ const InvoiceReport = () => {
                 <p>
                   <strong>Contact No:</strong>{" "}
                   {selectedInvoice.customerContactNo}
+                </p>
+              </div>
+              <div className="custom-invoice-flex">
+                <p>
+                  <strong>Billed By:</strong> {selectedInvoice.billedBy}
                 </p>
               </div>
             </div>

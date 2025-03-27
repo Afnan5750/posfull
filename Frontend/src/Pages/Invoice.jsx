@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
+import axios from "axios";
 import "../Styles/Invoice.css";
 import { FaEye, FaEdit, FaTrash, FaPrint } from "react-icons/fa";
 import logo from "../assets/images/black-pos-logo.png";
@@ -13,6 +14,7 @@ const Invoice = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+  const [storeDetails, setStoreDetails] = useState(null);
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -33,6 +35,19 @@ const Invoice = () => {
     };
 
     fetchInvoices();
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/detail/getDetail")
+      .then((response) => {
+        if (response.data.length > 0) {
+          setStoreDetails(response.data[0]); // Assuming there's only one store detail
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching store details", error);
+      });
   }, []);
 
   const handleEditClick = (invoiceId) => {
@@ -344,9 +359,17 @@ const Invoice = () => {
 
             {/* Invoice Header */}
             <div className="custom-invoice-header custom-text-center">
-              <h2>Company Name</h2>
-              <p>123 Main Street, City, Country</p>
-              <p>Email: info@company.com | Phone: (123) 456-7890</p>
+              <h2>{storeDetails ? storeDetails.storeName : "Company Name"}</h2>
+              <p>
+                {storeDetails
+                  ? storeDetails.address
+                  : "123 Main Street, City, Country"}
+              </p>
+              <p>
+                Email: {storeDetails ? storeDetails.email : "info@company.com"}{" "}
+                | Phone:{" "}
+                {storeDetails ? storeDetails.contactNo : "(123) 456-7890"}
+              </p>
             </div>
 
             <hr className="custom-divider" />
@@ -369,6 +392,11 @@ const Invoice = () => {
                 <p>
                   <strong>Contact No:</strong>{" "}
                   {selectedInvoice.customerContactNo}
+                </p>
+              </div>
+              <div className="custom-invoice-flex">
+                <p>
+                  <strong>Billed By:</strong> {selectedInvoice.billedBy}
                 </p>
               </div>
             </div>
